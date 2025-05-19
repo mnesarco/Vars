@@ -1,0 +1,83 @@
+[project]
+name = "Vars"
+version = "0.0.1.dev0"
+description = "FreeCAD Vars"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "LGPL-3.0-or-later"
+
+maintainers = [
+    {name = "Frank David Martínez Muñoz", email = "mnesarco@gmail.com" }
+]
+
+authors = [
+    {name = "Frank David Martínez Muñoz", email = "mnesarco@gmail.com" }
+]
+
+keywords = ["vars", "dynamic", "freecad", "addons", "workbench"]
+
+[project.urls]
+repository = "https://github.com/mnesarco/Vars/"
+documentation = "https://github.com/mnesarco/Vars/wiki/"
+readme = "https://github.com/mnesarco/Vars/blob/main/README.md"
+
+
+[dependency-groups]
+dev = [
+    "freecad-stubs>=1.0.17",
+    "PySide6",
+    "ipykernel",
+    "toml",
+    "typer",
+    "packaging",
+    "rich",
+    "scour",
+]
+
+[tool.ruff]
+line-length = 100
+indent-width = 4
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "ANN002",
+    "ANN003",
+    "ANN401",
+    "D100",
+    "D102",
+    "D103",
+    "D104",
+    "D105",
+    "D200",
+    "D212",
+    "D400",
+    "D401",
+    "D415",
+    "FBT001",
+    "FBT002",
+    "FBT003",
+    "I001",
+    "N802",
+    "N806",
+    "N813",
+    "PGH003",
+    "SIM108",
+    "SIM117",
+    "TID252",
+    "UP038",
+    "PLR0913",
+]
+
+[tool.ruff.lint.flake8-annotations]
+suppress-dummy-args = true
+
+[tool.ruff.lint.pydocstyle]
+ignore-decorators = ["fpo.template", "contextlib.contextmanager"]
+
+[tool.freecad]
+branch = "main"
+icon = "freecad/vars/resources/icons/vars.svg"
+freecad-min = "1.0"
+# lupdate-files = []
+lupdate-langs = ["es", "en", "de", "fr"]

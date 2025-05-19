@@ -1,0 +1,21 @@
+<package format="1">
+    <name>Vars</name>
+    <description>FreeCAD Vars</description>
+    <version>0.0.1.dev0</version>
+    <license file="LICENSE">LGPL-3.0-or-later</license>
+    <date>2025-05-19</date>
+    <pythonmin>3.10</pythonmin>
+    <icon>freecad/vars/resources/icons/vars.svg</icon>
+    <freecadmin>1.0</freecadmin>
+    <content />
+    <maintainer email="mnesarco@gmail.com">Frank David Martínez Muñoz</maintainer>
+    <author email="mnesarco@gmail.com">Frank David Martínez Muñoz</author>
+    <tag>addons</tag>
+    <tag>dynamic</tag>
+    <tag>freecad</tag>
+    <tag>vars</tag>
+    <tag>workbench</tag>
+    <url type="documentation">https://github.com/mnesarco/Vars/wiki/</url>
+    <url type="readme">https://github.com/mnesarco/Vars/blob/main/README.md</url>
+    <url type="repository" branch="main">https://github.com/mnesarco/Vars/</url>
+</package>

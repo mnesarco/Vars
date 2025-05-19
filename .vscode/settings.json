@@ -1,0 +1,16 @@
+{
+    "cSpell.words": [
+        "autoraise",
+        "fcapi",
+        "fcui",
+        "fcvars",
+        "gltf",
+        "hexlify",
+        "pixmap",
+        "unpolish",
+        "varset",
+        "varsets",
+        "Varsets"
+    ],
+    "ruff.lineLength": 100,
+}

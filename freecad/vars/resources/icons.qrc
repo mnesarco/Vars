@@ -1,0 +1,25 @@
+<RCC>
+  <qresource>
+    <file>./build/icons/__init__.py</file>
+    <file>./build/icons/add.svg</file>
+    <file>./build/icons/arrow-back.svg</file>
+    <file>./build/icons/check-mark.svg</file>
+    <file>./build/icons/child-arrow.svg</file>
+    <file>./build/icons/delete.svg</file>
+    <file>./build/icons/edit.svg</file>
+    <file>./build/icons/file-export.svg</file>
+    <file>./build/icons/file-import.svg</file>
+    <file>./build/icons/preferences-vars.svg</file>
+    <file>./build/icons/recompute-conf.svg</file>
+    <file>./build/icons/recompute-pause.svg</file>
+    <file>./build/icons/recompute-run.svg</file>
+    <file>./build/icons/reference.svg</file>
+    <file>./build/icons/rename.svg</file>
+    <file>./build/icons/right-arrow-1.svg</file>
+    <file>./build/icons/table.svg</file>
+    <file>./build/icons/tools.svg</file>
+    <file>./build/icons/vars.svg</file>
+    <file>./build/icons/warning.svg</file>
+
+  </qresource>
+</RCC>
