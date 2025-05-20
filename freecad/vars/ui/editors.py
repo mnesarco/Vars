@@ -32,7 +32,7 @@ from textwrap import shorten, dedent
 import contextlib
 from . import widgets as uix
 
-import FreeCAD as App
+import FreeCAD as App  # type: ignore
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -198,7 +198,7 @@ class VarEditor(ui.QObject):
         if var.name == self.variable.name:
             self.event_bus.remove_var_editor.emit(self)
 
-    def install_focus_style_listener(self, parent: ui.QWidget) -> None:
+    def install_focus_style_listener(self, _parent: ui.QWidget) -> None:
         ui.QApplication.instance().focusChanged.connect(self.on_focus_change)
 
     def create_description(self, parent: ui.QWidget) -> None:
@@ -294,11 +294,12 @@ class VarEditor(ui.QObject):
             self.editor.blockSignals(False)
 
     def var_tooltip(self) -> str:
+        var = self.variable
         return dedent(f"""
-            <p>{self.variable.name}: {shorten(self.variable.description, 255, placeholder="...")}</p>
-            <pre>Type: {self.variable.var_type}
-            Expression: &lt;&lt;{self.variable.name}&gt;&gt;.Value
-            Python: freecad.vars.api.get_var("{self.variable.name}", doc)</pre>
+            <p>{var.name}: {shorten(var.description, 255, placeholder="...")}</p>
+            <pre>Type: {var.var_type}
+            Expression: &lt;&lt;{var.name}&gt;&gt;.Value
+            Python: freecad.vars.api.get_var("{var.name}", doc)</pre>
             """)
 
     def create_menu(self) -> None:
@@ -511,7 +512,11 @@ class UIPage(ui.QObject):
     dialog: ui.QWidget
     doc: Document
 
-    def __init__(self, editor: VariablesEditor, parent: ui.QObject | None = None) -> None:
+    def __init__(
+        self,
+        editor: VariablesEditor,
+        parent: ui.QObject | None = None,
+    ) -> None:
         super().__init__(parent)
         self.editor = editor
         self.page_id = editor.pages.count()
@@ -578,6 +583,7 @@ class HomePage(UIPage):
                 if self.scroll.isAncestorOf(widget):
                     self.scroll.ensureWidgetVisible(widget.parent())
                 widget.setFocus()
+
         ui.QTimer.singleShot(100, task)
 
     def search_box(self) -> ui.QWidget:
@@ -629,7 +635,11 @@ class HomePage(UIPage):
         return row
 
     def toggle_auto_recompute(
-        self, pause_icon: str, pause_tooltip: dtr, auto_icon: str, auto_tooltip: dtr
+        self,
+        pause_icon: str,
+        pause_tooltip: dtr,
+        auto_icon: str,
+        auto_tooltip: dtr,
     ) -> None:
         self.auto_recompute = not self.auto_recompute
         if self.auto_recompute:
@@ -650,7 +660,11 @@ class VarReferencesPage(UIPage):
     name: ui.InputTextWidget
     description: ui.QLabel
 
-    def __init__(self, editor: VariablesEditor, parent: ui.QObject | None = None) -> None:
+    def __init__(
+        self,
+        editor: VariablesEditor,
+        parent: ui.QObject | None = None,
+    ) -> None:
         super().__init__(editor, parent)
         with ui.Col():
             with ToolBar():
@@ -693,7 +707,11 @@ class VarEditPage(UIPage):
     references: ReferencesTable
     options: ui.InputTextMultilineWidget
 
-    def __init__(self, editor: VariablesEditor, parent: ui.QObject | None = None) -> None:
+    def __init__(
+        self,
+        editor: VariablesEditor,
+        parent: ui.QObject | None = None,
+    ) -> None:
         super().__init__(editor, parent)
         with ui.Col():
             with ToolBar():
@@ -899,7 +917,11 @@ class VarRenamePage(UIPage):
     message: ui.QLabel
     references: ReferencesTable
 
-    def __init__(self, editor: VariablesEditor, parent: ui.QObject | None = None) -> None:
+    def __init__(
+        self,
+        editor: VariablesEditor,
+        parent: ui.QObject | None = None,
+    ) -> None:
         super().__init__(editor, parent)
         self.var = None
         with ui.Col():
@@ -976,7 +998,11 @@ class VarDeletePage(UIPage):
     confirm: ui.QCheckBox
     button: ui.QPushButton
 
-    def __init__(self, editor: VariablesEditor, parent: ui.QObject | None = None) -> None:
+    def __init__(
+        self,
+        editor: VariablesEditor,
+        parent: ui.QObject | None = None,
+    ) -> None:
         super().__init__(editor, parent)
         self.var = None
         with ui.Col():
@@ -998,7 +1024,7 @@ class VarDeletePage(UIPage):
                         str(
                             dtr(
                                 "Vars",
-                                "Deleting variables will break all references to it. This action is irreversible.",
+                                "Deleting variables will break all references to it.",
                             ),
                         ),
                         wordWrap=True,
@@ -1073,7 +1099,9 @@ class VariablesEditor(ui.QObject):
         groups = self.get_groups()
 
         with ui.Dialog(
-            title=str(dtr("Vars", "Variables")), styleSheet=stylesheet, modal=False
+            title=str(dtr("Vars", "Variables")),
+            styleSheet=stylesheet,
+            modal=False,
         ) as dialog:
             dialog.setAttribute(ui.Qt.WidgetAttribute.WA_DeleteOnClose)
             self.dialog = dialog
@@ -1100,11 +1128,10 @@ class VariablesEditor(ui.QObject):
             if event.doc != self.doc:
                 on_document_activate.unsubscribe()
                 with contextlib.suppress(Exception):
-                    dialog.close() # TODO: Investigate lifecycle issue
+                    dialog.close()  # TODO(mnesarco): Investigate lifecycle issue
 
         dialog.onMove.connect(self.on_move_or_resize)
         dialog.onResize.connect(self.on_move_or_resize)
-
 
     def get_geometry(self) -> tuple[int, int, int, int]:
         x = self.q_settings.value("x", 0, int)
@@ -1112,7 +1139,6 @@ class VariablesEditor(ui.QObject):
         w = self.q_settings.value("w", 800, int)
         h = self.q_settings.value("h", 600, int)
         return x, y, w, h
-
 
     def on_move_or_resize(self, _e) -> None:
         pos = self.dialog.pos()
@@ -1153,7 +1179,11 @@ class VariablesEditor(ui.QObject):
         else:
             ui.build_context().reset()
             new_section = VarGroupSection(
-                var.group, [var], self.event_bus, add=False, parent=self.dialog
+                var.group,
+                [var],
+                self.event_bus,
+                add=False,
+                parent=self.dialog,
             )
             self.sections.append(new_section)
             self.sections_layout.addWidget(new_section.container)
