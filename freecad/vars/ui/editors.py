@@ -464,6 +464,7 @@ class VarGroupSection(ui.QObject):
             self.editors_layout.addWidget(editor.widget)
             ui.build_context().reset()
             ui.QApplication.instance().processEvents()
+            self.editors_layout.activate()
             self.event_bus.request_focus.emit(editor.editor.objectName())
 
 
@@ -1158,6 +1159,7 @@ class VariablesEditor(ui.QObject):
             self.sections_layout.addWidget(new_section.container)
             ui.build_context().reset()
             ui.QApplication.instance().processEvents()
+            self.sections_layout.activate()
             self.event_bus.request_focus.emit(new_section.editors[0].editor.objectName())
 
     def on_home(self) -> None:
