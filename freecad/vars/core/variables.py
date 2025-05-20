@@ -65,7 +65,8 @@ def create_var(
     """
     name = sanitize_var_name(name)
     doc = doc or App.activeDocument()
-    if get_varset(name, doc):
+
+    if exists_var_name(name, doc):
         return False
 
     if var_type == "App::PropertyEnumeration":
@@ -131,7 +132,8 @@ def rename_var(
     """
     new_name = sanitize_var_name(new_name)
     doc = doc or App.activeDocument()
-    if get_varset(new_name, doc):
+
+    if (actual_name := exists_var_name(new_name, doc)) and actual_name.lower() != name.lower():
         return False
 
     if varset := get_varset(name, doc):
@@ -672,7 +674,7 @@ class Variable:
         return f"Variable(name={self._name}, value={self.value})"
 
     def exists(self) -> bool:
-        return bool(get_varset(self._name, self._doc))
+        return bool(exists_var_name(self._name, self._doc))
 
     def delete(self) -> bool:
         return delete_var(self._name, doc=self._doc)
@@ -742,3 +744,19 @@ class Variable:
             doc=self._doc,
             converter=converter,
         )
+
+
+def exists_var_name(name: str, doc: Document | None = None) -> str | None:
+    """
+    Check if a variable name exists in the document (case insensitive).
+
+    :param name: The name of the variable to check.
+    :param doc: The document where to search for the variable. Defaults to ActiveDocument.
+    :return: The variable name if it exists, None otherwise.
+    """
+    doc = doc or App.activeDocument()
+    name = name.lower()
+    for obj in doc.findObjects("App::VarSet"):
+        if is_var(obj) and obj.Label.lower() == name:
+            return obj.Label
+    return None
