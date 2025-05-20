@@ -3,7 +3,7 @@
 This Add-On provides an alternative option to raw VarSets. Here
 variables are first class DocumentObjects.
 
-![Home](./freecad/vars/resources/images/home.png)
+![Home](./freecad/vars/resources/images/ui-help.png)
 
 ## Features
 
