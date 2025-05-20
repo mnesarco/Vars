@@ -9,7 +9,7 @@ from .vendor.fcapi.preferences import (
     auto_gui,
 )
 from .vendor.fcapi.lang import dtr
-
+from freecad.vars.core.properties import get_supported_property_types
 
 @auto_gui(
     default_ui_group="Vars",
@@ -57,4 +57,5 @@ class VarsPreferences(Preferences):
             "Default property type when creating a new var.",
         ),
         ui_section=dtr("Vars", "General"),
+        options=get_supported_property_types(),
     )
