@@ -7,6 +7,8 @@ FreeCAD Vars: Editors UI.
 
 from __future__ import annotations
 
+from functools import cache
+import re
 from typing import TYPE_CHECKING
 
 from freecad.vars.vendor.fcapi.events import events
@@ -177,7 +179,7 @@ class VarEditor(ui.QObject):
             with ui.Col(contentsMargins=(2, 0, 2, 0), spacing=0):
                 with ui.Row(contentsMargins=(0, 0, 0, 0), spacing=0):
                     self.label = ui.InputText(
-                        variable.name,
+                        var_display_label(variable.group, variable.name),
                         readOnly=True,
                         focusPolicy=ui.Qt.FocusPolicy.ClickFocus,
                         stretch=45,
@@ -282,7 +284,7 @@ class VarEditor(ui.QObject):
 
     def ui_update(self, var: Variable) -> None:
         if var.name == self.variable.name:
-            self.label.setText(var.name)
+            self.label.setText(var_display_label(var.group, var.name))
             self.label.setToolTip(self.var_tooltip())
             self.description.setText(var.description)
             self.silent_value_update(var)
@@ -1317,3 +1319,16 @@ class VariablesEditor(ui.QObject):
             return str(dtr("Vars", "Failed to delete variable."))
         except Exception as e:  # noqa: BLE001
             return str(e)
+
+_DISPLAY_LABEL_SEP = re.compile(r"_|(?=[A-Z])")
+
+@cache
+def var_display_label(group: str, name: str) -> str:
+    """Get the display label for a variable."""
+    try:
+        parts = [p for p in _DISPLAY_LABEL_SEP.split(name) if p]
+        if len(parts) > 1 and group.lower() == parts[0].lower():
+            parts.pop(0)
+        return " ".join(p.capitalize() for p in parts)
+    except Exception:  # noqa: BLE001
+        return name
