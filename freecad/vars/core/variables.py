@@ -103,7 +103,7 @@ def create_var(
     elif value is not None:
         varset.Value = value
 
-    varset.VarGroup = group or "Default"
+    varset.VarGroup = (group or "Default").title()
     varset.Description = description or ""
 
     if preferences.hide_varsets():
@@ -333,7 +333,7 @@ def set_var_group(name: str, group: str, doc: Document | None = None) -> bool:
     """
     doc = doc or App.activeDocument()
     if varset := get_varset(name, doc):
-        varset.VarGroup = group or "Default"
+        varset.VarGroup = (group or "Default").title()
         return True
     return False
 
