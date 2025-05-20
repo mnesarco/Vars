@@ -740,7 +740,7 @@ class VarEditPage(UIPage):
                 self.root = root
                 with ui.Col():
                     ui.TextLabel(str(dtr("Vars", "Name:")))
-                    self.name = ui.InputText(value="")
+                    self.name = ui.InputText(value="", maxLength=128)
 
                     ui.TextLabel(str(dtr("Vars", "Type:")))
                     self.types = ui.InputOptions(
@@ -755,6 +755,7 @@ class VarEditPage(UIPage):
                         editable=True,
                         insertPolicy=ui.QComboBox.InsertPolicy.InsertAtBottom,
                     )
+                    self.groups.lineEdit().setMaxLength(128)
 
                     for completer in (self.groups.completer(), self.types.completer()):
                         completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
@@ -775,7 +776,7 @@ class VarEditPage(UIPage):
                             value="",
                             minimumHeight=64,
                             maximumHeight=100,
-                            max_length=256,
+                            max_length=4096,
                             stretch=1,
                         )
 
