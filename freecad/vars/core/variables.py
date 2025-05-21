@@ -35,6 +35,7 @@ def get_vars_group(doc: Document | None = None) -> DocumentObject:
     group = doc.getObject("XVarGroup")
     if not group:
         group = doc.addObject("App::DocumentObjectGroup", "XVarGroup")
+        group.Label = "Variables"
     return group
 
 
@@ -479,6 +480,13 @@ def set_var_type(
 
 
 def convert_list_type(data: list, new_type: str) -> list:
+    """
+    Convert a list of values to a new list with elements cast to a specified type.
+
+    :param list data: The list of values to convert.
+    :param str new_type: The type of the new list.
+    :return: A new list with the converted values.
+    """
     if not data:
         return []
     if new_type == "App::PropertyStringList":

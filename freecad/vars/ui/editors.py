@@ -191,7 +191,7 @@ class VarEditor(ui.QObject):
                     self.create_menu()
 
             self.create_description(box)
-            self.install_focus_style_listener(box)
+            self.install_focus_style_listener()
 
         event_bus.var_deleted.connect(self.remove_self)
 
@@ -200,7 +200,7 @@ class VarEditor(ui.QObject):
         if var.name == self.variable.name:
             self.event_bus.remove_var_editor.emit(self)
 
-    def install_focus_style_listener(self, _parent: ui.QWidget) -> None:
+    def install_focus_style_listener(self) -> None:
         ui.QApplication.instance().focusChanged.connect(self.on_focus_change)
 
     def create_description(self, parent: ui.QWidget) -> None:
@@ -1049,9 +1049,7 @@ class VarDeletePage(UIPage):
                             enabled=False,
                         )
 
-                        self.confirm.toggled.connect(
-                            lambda checked: self.button.setEnabled(checked),
-                        )
+                        self.confirm.toggled.connect(self.button.setEnabled)
 
                     self.references = ReferencesTable(
                         str(dtr("Vars", "Known References (Will break)")),
@@ -1321,7 +1319,9 @@ class VariablesEditor(ui.QObject):
         except Exception as e:  # noqa: BLE001
             return str(e)
 
+
 _DISPLAY_LABEL_SEP = re.compile(r"_|(?=[A-Z])")
+
 
 @cache
 def var_display_label(group: str, name: str) -> str:

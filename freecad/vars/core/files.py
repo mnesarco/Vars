@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 import contextlib
 
-
+# Property types that are considered literals
 LITERALS = {
     "App::PropertyInteger",
     "App::PropertyFloat",
@@ -20,7 +20,7 @@ LITERALS = {
 @dataclass(kw_only=True)
 class VarInfoData:
     """
-    Information about a FreeCAD variable.
+    Information about a FreeCAD variable for persistence.
     """
 
     type: str
