@@ -8,7 +8,8 @@ license: CCO-1.0
 
 import sys
 from pathlib import Path
-import shutil, os
+import shutil
+import os
 import argparse
 import re
 import textwrap
@@ -25,17 +26,17 @@ except ImportError:
 SVG_PATTERN = re.compile(r"^.*\.svg$", re.IGNORECASE)
 
 
-def optimize(src_dir: Path, icons_dir: Path, base_dir: Path):
+def optimize(src_dir: Path, icons_dir: Path, base_dir: Path) -> None:
     from scour import scour
 
-    for root, dirs, files in os.walk(src_dir):
+    for root, _dirs, files in os.walk(src_dir):
         path = Path(root).relative_to(base_dir)
         dest = icons_dir / path
         if not dest.exists():
             dest.mkdir(parents=True)
         for file in files:
             if SVG_PATTERN.fullmatch(file):
-                with open(base_dir / path / file, "r") as fin:
+                with open(base_dir / path / file) as fin:
                     svg = scour.scourString(fin.read())
                     with open(dest / file, "w") as fout:
                         fout.write(svg)
@@ -43,12 +44,11 @@ def optimize(src_dir: Path, icons_dir: Path, base_dir: Path):
                 shutil.copy(base_dir / path / file, dest / file)
 
 
-def build(icons_dir: Path, base_dir: Path):
+def build(icons_dir: Path, base_dir: Path) -> None:
     names = []
-    for root, dirs, files in os.walk(icons_dir):
+    for root, _dirs, files in os.walk(icons_dir):
         path = Path(root).relative_to(base_dir)
-        for file in files:
-            names.append(f"<file>./{path / file}</file>\n")
+        names.extend([f"<file>./{path / file}</file>\n" for file in files])
 
     with open(base_dir / "icons.qrc", "w") as out:
         template = f"""\
@@ -61,7 +61,7 @@ def build(icons_dir: Path, base_dir: Path):
         out.write(textwrap.dedent(template))
 
 
-def main(optimized: bool = True):
+def main(optimized: bool = True) -> None:
     base_dir = Path(__file__).parent
     src_dir = base_dir / "icons"
     if optimized:

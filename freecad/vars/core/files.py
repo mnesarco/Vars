@@ -35,7 +35,11 @@ class VarInfoData:
 
 def load_variables_from_file(file_path: str | Path) -> list[VarInfoData]:
     """
-    Load variables from a file.
+    Load variables from a file in INI format and return them as a list of VarInfoData objects.
+
+    :param file_path: The path to the file from which the variables will be loaded.
+    :return: A list of VarInfoData objects representing the variables loaded from the file.
+    :side effects: Reads from the specified file path.
     """
     import configparser as cp
     import ast
@@ -72,7 +76,12 @@ def load_variables_from_file(file_path: str | Path) -> list[VarInfoData]:
 
 def save_variables_to_file(file_path: str | Path, variables: list[VarInfoData]) -> None:
     """
-    Save variables to a file.
+    Save a list of variable information objects to a file in INI format.
+
+    :param file_path: The path to the file where the variables will be saved.
+    :param variables: The list of VarInfoData objects to persist.
+    :return: None
+    :side effects: Writes to the specified file path, overwriting its contents if it exists.
     """
     import configparser as cp
 

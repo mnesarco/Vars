@@ -37,6 +37,16 @@ class PropertyTypeInfo:
 
 
 def get_all_property_types() -> Generator[tuple[str, PropertyTypeInfo], None, None]:
+    """
+    Yield all available FreeCAD property types along with their associated information.
+
+    Iterates through the available property constructors in the FreeCAD property object (fpo)
+    and yields a tuple containing the property type name and a PropertyTypeInfo instance
+    for each supported property. Also includes the enumeration property type.
+
+    :return: A generator yielding tuples of property type name and PropertyTypeInfo.
+    :side effects: None.
+    """
     for prop in vars(fpo).values():
         if isinstance(prop, fpo._prop_constructor):
             yield (
@@ -58,6 +68,14 @@ def get_all_property_types() -> Generator[tuple[str, PropertyTypeInfo], None, No
 
 
 def get_property_widget(name: str, py_type: type) -> str | None:
+    """
+    Return the appropriate editor widget name for a given FreeCAD property type.
+
+    :param name: The name of the FreeCAD property type.
+    :param py_type: The Python type associated with the property.
+    :return: The name of the editor widget to use, or None if no suitable widget is found.
+    :side effects: None.
+    """
     match name:
         case "App::PropertyInteger" | "App::PropertyIntegerConstraint":
             return "Gui::IntSpinBox"
@@ -77,6 +95,14 @@ class PropertyAccessorAdapter(QObject):
     property_assigned = Signal(DocumentObject, str, object)
 
     def __init__(self, property_type: str, parent: QObject | None = None) -> None:
+        """
+        Initialize the PropertyAccessorAdapter for a specific FreeCAD property type.
+
+        :param property_type: The type of property this adapter will handle.
+        :param parent: The parent QObject, if any.
+        :return: None
+        :side effects: Sets up getter and setter methods for the specified property type.
+        """
         super().__init__(parent)
         self.get, self.set = self.accessors(property_type)
 

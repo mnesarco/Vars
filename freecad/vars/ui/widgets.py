@@ -2,7 +2,7 @@
 # (c) 2025 Frank David Martínez Muñoz. <mnesarco at gmail.com>
 
 from freecad.vars.vendor.fcapi import fcui as ui
-from FreeCAD import DocumentObject
+from FreeCAD import DocumentObject # type: ignore
 
 
 class PropertyEnumerationWidget(ui.QComboBox):
@@ -10,7 +10,7 @@ class PropertyEnumerationWidget(ui.QComboBox):
     Property Enumeration Widget.
     """
 
-    valueChanged = ui.Signal(object)
+    valueChanged = ui.Signal(object)  # noqa: N815 Qt Consistency
     obj: DocumentObject
     prop_name: str
     accessor_adapter: ui.PropertyAccessorAdapter
