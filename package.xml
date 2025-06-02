@@ -3,7 +3,7 @@
     <description>FreeCAD Vars</description>
     <version>0.0.1.dev2</version>
     <license file="LICENSE">LGPL-3.0-or-later</license>
-    <date>2025-05-21</date>
+    <date>2025-06-01</date>
     <pythonmin>3.10</pythonmin>
     <icon>freecad/vars/resources/icons/vars.svg</icon>
     <freecadmin>1.0</freecadmin>
@@ -17,5 +17,5 @@
     <tag>workbench</tag>
     <url type="documentation">https://github.com/mnesarco/Vars/wiki/</url>
     <url type="readme">https://github.com/mnesarco/Vars/blob/main/README.md</url>
-    <url type="repository" branch="main">https://github.com/mnesarco/Vars/</url>
+    <url type="repository" branch="main">https://github.com/mnesarco/Vars</url>
 </package>

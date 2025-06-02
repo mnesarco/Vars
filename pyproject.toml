@@ -17,7 +17,7 @@ authors = [
 keywords = ["vars", "dynamic", "freecad", "addons", "workbench"]
 
 [project.urls]
-repository = "https://github.com/mnesarco/Vars/"
+repository = "https://github.com/mnesarco/Vars"
 documentation = "https://github.com/mnesarco/Vars/wiki/"
 readme = "https://github.com/mnesarco/Vars/blob/main/README.md"
 
