@@ -574,6 +574,7 @@ def import_variables(path: str | Path, doc: Document | None = None) -> bool:
                 options=var.options,
                 description=var.description,
                 expression=var.expression,
+                group=var.group,
             )
 
         if var.value is not None:
@@ -613,11 +614,13 @@ class Variable:
 
     def create_if_not_exists(
         self,
+        *,
         var_type: str = "App::PropertyLength",
         default: Any = None,
         options: VarOptions = None,
         description: str = "",
         expression: str | None = None,
+        group: str = "Default",
     ) -> Variable:
         """
         Create a variable if it doesn't exist.
@@ -641,6 +644,7 @@ class Variable:
             description=description,
             expression=expression,
             doc=self._doc,
+            group=group,
         )
         return self
 
