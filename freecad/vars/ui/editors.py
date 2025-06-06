@@ -12,7 +12,7 @@ import re
 from typing import TYPE_CHECKING
 
 from freecad.vars.vendor.fcapi.events import events
-from freecad.vars.vendor.fcapi.lang import dtr
+from freecad.vars.vendor.fcapi.lang import dtr, translate
 from freecad.vars.vendor.fcapi import fcui as ui
 from freecad.vars.api import (
     Variable,
@@ -41,11 +41,11 @@ if TYPE_CHECKING:
     from collections.abc import Generator
     from FreeCAD import Document, DocumentObject  # type: ignore
     from PySide6.QtWidgets import QGraphicsOpacityEffect, QCompleter
-    from PySide6.QtCore import QSettings
+    from PySide6.QtCore import QSettings, QObject, QEvent
 
 if not TYPE_CHECKING:
     from PySide.QtGui import QGraphicsOpacityEffect, QCompleter
-    from PySide.QtCore import QSettings
+    from PySide.QtCore import QSettings, QObject, QEvent
 
 style_vars = {
     "border_color": TEXT_COLOR,
@@ -134,7 +134,7 @@ def add_action(
     return action
 
 
-class VarEditor(ui.QObject):
+class VarEditor(QObject):
     """Variable editor row."""
 
     variable: Variable
@@ -143,13 +143,15 @@ class VarEditor(ui.QObject):
     editor: ui.InputQuantityWidget
     widget: ui.QWidget
     event_bus: EventBus
+    lock_event_filter: LockEventFilter
+    lock_action: ui.QAction
 
     def __init__(
         self,
         variable: Variable,
         event_bus: EventBus,
         add: bool = True,
-        parent: ui.QObject | None = None,
+        parent: QObject | None = None,
     ) -> None:
         """
         Initialize a variable editor.
@@ -165,6 +167,8 @@ class VarEditor(ui.QObject):
         self.variable = variable
         self.event_bus = event_bus
         self.description_visible = bool(preferences.show_descriptions() and variable.description)
+        self.lock_event_filter = LockEventFilter(self)
+        self.lock_action = None
 
         with ui.Container(
             contentsMargins=(0, 0, 0, 0),
@@ -265,7 +269,23 @@ class VarEditor(ui.QObject):
         self.event_bus.variable_changed.connect(self.silent_value_update)
         self.event_bus.var_renamed.connect(self.ui_update)
 
+        self.lock(variable.read_only)
         return self.editor
+
+    def lock(self, lock: bool = True) -> None:
+        if lock:
+            self.lock_event_filter.install(self.editor)
+            icon = ui.QIcon(resources.icon("locked.svg"))
+            setattr(  # noqa: B010
+                self.label,
+                "_lock_icon",
+                self.label.addAction(icon, ui.QLineEdit.ActionPosition.TrailingPosition),
+            )
+        else:
+            self.lock_event_filter.uninstall(self.editor)
+            if action := getattr(self.label, "_lock_icon", None):
+                self.label.removeAction(action)
+            setattr(self.label, "_lock_icon", None)  # noqa: B010
 
     def on_validation_failed(self, _obj: DocumentObject, _prop: str, _value: object) -> None:
         if getattr(self.label, "_warning", None):
@@ -288,6 +308,7 @@ class VarEditor(ui.QObject):
             self.label.setToolTip(self.var_tooltip())
             self.description.setText(var.description)
             self.silent_value_update(var)
+            self.cmd_lock()
 
     def silent_value_update(self, var: Variable) -> None:
         if var.name != self.variable.name:
@@ -343,11 +364,32 @@ class VarEditor(ui.QObject):
             icon="delete.svg",
         )
 
+        self.lock_action = add_action(
+            button,
+            text=dtr("Vars", "Unlock") if self.variable.read_only else dtr("Vars", "Lock"),
+            receiver=self.cmd_lock,
+            icon="unlock.svg" if self.variable.read_only else "lock.svg",
+        )
+
     def filter(self, text: str) -> None:
         if not text or text.lower() in self.variable.name.lower():
             set_visibility(self.widget, True)
             return
         set_visibility(self.widget, False)
+
+    def cmd_lock(self) -> None:
+        read_only = not self.variable.read_only
+        self.variable.read_only = read_only
+        self.lock(read_only)
+        action = self.lock_action
+        if read_only:
+            action.setIcon(FlatIcon(resources.icon("unlock.svg")))
+            action.setText(translate("Vars", "Unlock"))
+            self.lock_icon.show()
+        else:
+            action.setIcon(FlatIcon(resources.icon("lock.svg")))
+            action.setText(translate("Vars", "Lock"))
+            self.lock_icon.hide()
 
     def cmd_rename(self) -> None:
         self.event_bus.goto_rename_var.emit(self.variable)
@@ -381,7 +423,7 @@ class VarEditor(ui.QObject):
             next_widget.setFocus()
 
 
-class EventBus(ui.QObject):
+class EventBus(QObject):
     """Event bus for async inter-object communication."""
 
     goto_home = ui.Signal()
@@ -408,7 +450,7 @@ class EventBus(ui.QObject):
         super().__init__(*args)
 
 
-class VarGroupSection(ui.QObject):
+class VarGroupSection(QObject):
     """Variable group section."""
 
     name: str
@@ -423,7 +465,7 @@ class VarGroupSection(ui.QObject):
         variables: list[Variable],
         event_bus: EventBus,
         add: bool = True,
-        parent: ui.QObject | None = None,
+        parent: QObject | None = None,
     ) -> None:
         super().__init__(parent)
         self.name = name
@@ -505,7 +547,7 @@ def ToolBar(*, stretch: bool = True) -> Generator[ui.QWidget, None, None]:
             ui.Stretch(1)
 
 
-class UIPage(ui.QObject):
+class UIPage(QObject):
     """View: Base class for pages."""
 
     editor: VariablesEditor
@@ -517,7 +559,7 @@ class UIPage(ui.QObject):
     def __init__(
         self,
         editor: VariablesEditor,
-        parent: ui.QObject | None = None,
+        parent: QObject | None = None,
     ) -> None:
         super().__init__(parent)
         self.editor = editor
@@ -538,7 +580,7 @@ class HomePage(UIPage):
         self,
         editor: VariablesEditor,
         groups: list[tuple[str, list[Variable]]],
-        parent: ui.QObject | None = None,
+        parent: QObject | None = None,
     ) -> None:
         super().__init__(editor, parent)
         self.auto_recompute = False
@@ -665,7 +707,7 @@ class VarReferencesPage(UIPage):
     def __init__(
         self,
         editor: VariablesEditor,
-        parent: ui.QObject | None = None,
+        parent: QObject | None = None,
     ) -> None:
         super().__init__(editor, parent)
         with ui.Col():
@@ -712,7 +754,7 @@ class VarEditPage(UIPage):
     def __init__(
         self,
         editor: VariablesEditor,
-        parent: ui.QObject | None = None,
+        parent: QObject | None = None,
     ) -> None:
         super().__init__(editor, parent)
         with ui.Col():
@@ -923,7 +965,7 @@ class VarRenamePage(UIPage):
     def __init__(
         self,
         editor: VariablesEditor,
-        parent: ui.QObject | None = None,
+        parent: QObject | None = None,
     ) -> None:
         super().__init__(editor, parent)
         self.var = None
@@ -1004,7 +1046,7 @@ class VarDeletePage(UIPage):
     def __init__(
         self,
         editor: VariablesEditor,
-        parent: ui.QObject | None = None,
+        parent: QObject | None = None,
     ) -> None:
         super().__init__(editor, parent)
         self.var = None
@@ -1075,7 +1117,7 @@ class VarDeletePage(UIPage):
         self.references.update(var)
 
 
-class VariablesEditor(ui.QObject):
+class VariablesEditor(QObject):
     """Controller: Variables Editor."""
 
     doc: Document
@@ -1333,3 +1375,43 @@ def var_display_label(group: str, name: str) -> str:
         return " ".join(p.capitalize() for p in parts)
     except Exception:  # noqa: BLE001
         return name
+
+
+class LockEventFilter(QObject):
+    interactive_events = frozenset((
+        QEvent.Type.MouseButtonPress,
+        QEvent.Type.MouseButtonRelease,
+        QEvent.Type.MouseButtonDblClick,
+        QEvent.Type.KeyPress,
+        QEvent.Type.KeyRelease,
+        QEvent.Type.Wheel,
+        QEvent.Type.FocusIn,
+        QEvent.Type.FocusOut,
+        QEvent.Type.Enter,
+        QEvent.Type.Leave,
+        # QEvent.Type.HoverEnter,
+        # QEvent.Type.HoverLeave,
+        # QEvent.Type.HoverMove,
+        QEvent.Type.ContextMenu,
+        QEvent.Type.TouchBegin,
+        QEvent.Type.TouchUpdate,
+        QEvent.Type.TouchEnd,
+    ))
+
+    def __init__(self, parent: QObject | None = None) -> None:
+        super().__init__(parent)
+
+    def eventFilter(self, obj: QObject, event: QEvent) -> bool:
+        if event.type() in LockEventFilter.interactive_events:
+            return True
+        return super().eventFilter(obj, event)
+
+    def install(self, target: ui.QWidget) -> None:
+        target.installEventFilter(self)
+        for child in target.findChildren(ui.QWidget):
+            child.installEventFilter(self)
+
+    def uninstall(self, target: ui.QWidget) -> None:
+        target.removeEventFilter(self)
+        for child in target.findChildren(ui.QWidget):
+            child.removeEventFilter(self)

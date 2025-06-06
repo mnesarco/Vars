@@ -8,6 +8,7 @@ FreeCAD Vars: Variables.
 from __future__ import annotations
 from pathlib import Path
 from typing import Any, TYPE_CHECKING, TypeAlias
+import operator as op
 
 from freecad.vars.utils import get_unique_name
 from freecad.vars.vendor.fcapi.fpo import PropertyMode
@@ -744,6 +745,38 @@ class Variable:
     @property
     def doc(self) -> Document:
         return self._doc
+
+    @property
+    def editor_mode(self) -> list[str]:
+        if varset := get_varset(self._name, self._doc):
+            return varset.getPropertyStatus("Value")
+        return []
+
+    @editor_mode.setter
+    def editor_mode(self, value: str | list[str]) -> None:
+        modes = {
+            "ReadOnly": (op.or_, 1),
+            "Hidden": (op.or_, 2),
+            "-ReadOnly": (op.and_, ~1),
+            "-Hidden": (op.and_, ~2),
+        }
+        if varset := get_varset(self._name, self._doc):
+            if not isinstance(value, list):
+                value = [value]
+            ops = [modes.get(v) for v in varset.getEditorMode("Value")]
+            ops.extend(modes.get(v, (op.or_, 0)) for v in value)
+            mode = 0
+            for f, v in ops:
+                mode = f(mode, v)
+            varset.setEditorMode("Value", mode)
+
+    @property
+    def read_only(self) -> bool:
+        return "ReadOnly" in self.editor_mode
+
+    @read_only.setter
+    def read_only(self, ro: bool) -> None:
+        self.editor_mode = "ReadOnly" if ro else "-ReadOnly"
 
     def change_var_type(
         self,
