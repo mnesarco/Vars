@@ -385,11 +385,9 @@ class VarEditor(QObject):
         if read_only:
             action.setIcon(FlatIcon(resources.icon("unlock.svg")))
             action.setText(translate("Vars", "Unlock"))
-            self.lock_icon.show()
         else:
             action.setIcon(FlatIcon(resources.icon("lock.svg")))
             action.setText(translate("Vars", "Lock"))
-            self.lock_icon.hide()
 
     def cmd_rename(self) -> None:
         self.event_bus.goto_rename_var.emit(self.variable)
