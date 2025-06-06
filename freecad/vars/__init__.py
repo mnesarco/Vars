@@ -7,4 +7,4 @@
 FreeCAD Vars.
 """
 
-__version__ = "0.0.1.dev4"  # <fcapi:sync-version>
+__version__ = "0.0.1.dev6"  # <fcapi:sync-version>
