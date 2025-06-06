@@ -300,7 +300,7 @@ class VarEditor(ui.QObject):
         return dedent(f"""
             <p>{var.name}: {shorten(var.description, 255, placeholder="...")}</p>
             <pre>Type: {var.var_type}
-            Expression: &lt;&lt;{var.name}&gt;&gt;.Value
+            Reference: &lt;&lt;{var.name}&gt;&gt;.Value
             Python: freecad.vars.api.get_var("{var.name}", doc)</pre>
             """)
 

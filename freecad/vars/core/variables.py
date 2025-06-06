@@ -298,9 +298,9 @@ def set_var_expression(name: str, expression: str | None, doc: Document | None =
     doc = doc or App.activeDocument()
     if varset := get_varset(name, doc):
         if not expression:
-            varset.clearExpression(name)
+            varset.clearExpression("Value")
             return True
-        varset.setExpression(name, expression)
+        varset.setExpression("Value", expression)
         return True
     return False
 
@@ -577,7 +577,7 @@ def import_variables(path: str | Path, doc: Document | None = None) -> bool:
                 group=var.group,
             )
 
-        if var.value is not None:
+        if var.value is not None and not var.expression:
             try:
                 doc_var.value = var.value
             except Exception:  # noqa: BLE001
