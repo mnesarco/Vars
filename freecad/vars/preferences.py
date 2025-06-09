@@ -27,10 +27,10 @@ class VarsPreferences(Preferences):
         group,
         name="hide_objects",
         default=True,
-        label=dtr("Vars", "Hide internally generated Varsets"),
+        label=dtr("Vars", "Hide variables in the Tree View"),
         description=dtr(
             "Vars",
-            "Hide Internal Varsets used to store the variables.",
+            "Hide associated Varset objects in the document Tree view",
         ),
         ui_section=dtr("Vars", "General"),
     )
@@ -59,3 +59,15 @@ class VarsPreferences(Preferences):
         ui_section=dtr("Vars", "General"),
         options=get_supported_property_types(),
     )
+
+    class Hidden:
+        """
+        Preferences for internal use. Nor editable by users.
+        """
+
+        show_hidden_vars = Preference(
+            group="Preferences/Mod/Vars/Internal",
+            name="show_hidden_vars",
+            default=False,
+        )
+

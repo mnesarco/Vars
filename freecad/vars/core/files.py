@@ -31,6 +31,9 @@ class VarInfoData:
     group: str | None = None
     expression: str | None = None
     options: list[str] | None = None
+    read_only: bool = False
+    hidden: bool = False
+    sort_key: int = 0
 
 
 def load_variables_from_file(file_path: str | Path) -> list[VarInfoData]:
@@ -61,6 +64,9 @@ def load_variables_from_file(file_path: str | Path) -> list[VarInfoData]:
             group=config.get(section, "group", fallback="Default"),
             expression=config.get(section, "expression", fallback=None),
             options=config.get(section, "options", fallback=None),
+            read_only=ast.literal_eval(config.get(section, "read_only", fallback="False")),
+            hidden=ast.literal_eval(config.get(section, "hidden", fallback="False")),
+            sort_key=ast.literal_eval(config.get(section, "sort_key", fallback="0")),
         )
         variables.append(var_info)
 
@@ -106,6 +112,9 @@ def save_variables_to_file(file_path: str | Path, variables: list[VarInfoData]) 
             config.set(section, "expression", var.expression)
         if var.options:
             config.set(section, "options", repr(var.options))
+        config.set(section, "read_only", repr(var.read_only))
+        config.set(section, "hidden", repr(var.hidden))
+        config.set(section, "sort_key", repr(var.sort_key))
 
     with file_path.open("w") as f:
         config.write(f)

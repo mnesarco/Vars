@@ -27,7 +27,7 @@ from freecad.vars.core.properties import (
     PropertyAccessorAdapter,
     get_supported_property_types,
 )
-from itertools import groupby
+from itertools import groupby, chain
 from freecad.vars.config import preferences, resources
 from .style import FlatIcon, interpolate_style_vars, TEXT_COLOR
 from textwrap import shorten, dedent
@@ -40,11 +40,11 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from collections.abc import Generator
     from FreeCAD import Document, DocumentObject  # type: ignore
-    from PySide6.QtWidgets import QGraphicsOpacityEffect, QCompleter
+    from PySide6.QtWidgets import QGraphicsOpacityEffect, QCompleter, QMenu, QAbstractSpinBox
     from PySide6.QtCore import QSettings, QObject, QEvent
 
 if not TYPE_CHECKING:
-    from PySide.QtGui import QGraphicsOpacityEffect, QCompleter
+    from PySide.QtGui import QGraphicsOpacityEffect, QCompleter, QMenu, QAbstractSpinBox
     from PySide.QtCore import QSettings, QObject, QEvent
 
 style_vars = {
@@ -145,6 +145,7 @@ class VarEditor(QObject):
     event_bus: EventBus
     lock_event_filter: LockEventFilter
     lock_action: ui.QAction
+    scroll_event_filter: ScrollEventFilter
 
     def __init__(
         self,
@@ -169,6 +170,7 @@ class VarEditor(QObject):
         self.description_visible = bool(preferences.show_descriptions() and variable.description)
         self.lock_event_filter = LockEventFilter(self)
         self.lock_action = None
+        self.scroll_event_filter = ScrollEventFilter(self)
 
         with ui.Container(
             contentsMargins=(0, 0, 0, 0),
@@ -192,17 +194,10 @@ class VarEditor(QObject):
                         cursorPosition=0,
                     )
                     self.create_input_editor(tooltip)
-                    self.create_menu()
+                    self.create_menu_button()
 
             self.create_description(box)
             self.install_focus_style_listener()
-
-        event_bus.var_deleted.connect(self.remove_self)
-
-    def remove_self(self, var: Variable) -> None:
-        """Notify the group to remove this editor."""
-        if var.name == self.variable.name:
-            self.event_bus.remove_var_editor.emit(self)
 
     def install_focus_style_listener(self) -> None:
         ui.QApplication.instance().focusChanged.connect(self.on_focus_change)
@@ -269,13 +264,16 @@ class VarEditor(QObject):
         self.event_bus.variable_changed.connect(self.silent_value_update)
         self.event_bus.var_renamed.connect(self.ui_update)
 
-        self.lock(variable.read_only)
+        self.lock_ui(variable.read_only)
+        self.update_visibility_ui()
+        self.scroll_event_filter.install(self.editor)
+
         return self.editor
 
-    def lock(self, lock: bool = True) -> None:
+    def lock_ui(self, lock: bool = True) -> None:
         if lock:
             self.lock_event_filter.install(self.editor)
-            icon = ui.QIcon(resources.icon("locked.svg"))
+            icon = FlatIcon(resources.icon("locked.svg"))
             setattr(  # noqa: B010
                 self.label,
                 "_lock_icon",
@@ -286,6 +284,20 @@ class VarEditor(QObject):
             if action := getattr(self.label, "_lock_icon", None):
                 self.label.removeAction(action)
             setattr(self.label, "_lock_icon", None)  # noqa: B010
+
+    def update_visibility_ui(self) -> None:
+        hidden = self.variable.hidden
+        if hidden:
+            icon = FlatIcon(resources.icon("hidden_ind.svg"))
+            setattr(  # noqa: B010
+                self.label,
+                "_hidden_icon",
+                self.label.addAction(icon, ui.QLineEdit.ActionPosition.TrailingPosition),
+            )
+        else:
+            if action := getattr(self.label, "_hidden_icon", None):
+                self.label.removeAction(action)
+            setattr(self.label, "_hidden_icon", None)  # noqa: B010
 
     def on_validation_failed(self, _obj: DocumentObject, _prop: str, _value: object) -> None:
         if getattr(self.label, "_warning", None):
@@ -303,15 +315,15 @@ class VarEditor(QObject):
             del self.label._warning  # noqa: SLF001
 
     def ui_update(self, var: Variable) -> None:
-        if var.name == self.variable.name:
+        if var == self.variable:
             self.label.setText(var_display_label(var.group, var.name))
             self.label.setToolTip(self.var_tooltip())
             self.description.setText(var.description)
+            self.update_visibility_ui()
             self.silent_value_update(var)
-            self.cmd_lock()
 
     def silent_value_update(self, var: Variable) -> None:
-        if var.name != self.variable.name:
+        if var != self.variable:
             self.editor.blockSignals(True)
             self.editor.setValue(self.variable.value)
             self.editor.blockSignals(False)
@@ -325,8 +337,8 @@ class VarEditor(QObject):
             Python: freecad.vars.api.get_var("{var.name}", doc)</pre>
             """)
 
-    def create_menu(self) -> None:
-        button = ui.Button(
+    def create_menu_button(self) -> None:
+        ui.Button(
             text="...",
             tool=True,
             popupMode=ui.QToolButton.ToolButtonPopupMode.InstantPopup,
@@ -334,60 +346,123 @@ class VarEditor(QObject):
             toolButtonStyle=ui.Qt.ToolButtonStyle.ToolButtonTextOnly,
             styleSheet="QToolButton::menu-indicator { image: none; }",
             focusPolicy=ui.Qt.FocusPolicy.NoFocus,
+            clicked=self.popup_menu,
         )
 
+    def popup_menu(self) -> None:
+        menu = QMenu()
+
         add_action(
-            button,
-            text=dtr("Vars", "Rename"),
+            menu,
+            text=translate("Vars", "Rename"),
             receiver=self.cmd_rename,
             icon="rename.svg",
         )
 
         add_action(
-            button,
-            text=dtr("Vars", "Show references"),
+            menu,
+            text=translate("Vars", "Show references"),
             receiver=self.cmd_references,
             icon="reference.svg",
         )
 
         add_action(
-            button,
-            text=dtr("Vars", "Change definition"),
+            menu,
+            text=translate("Vars", "Change definition"),
             receiver=self.cmd_edit,
             icon="edit.svg",
         )
 
         add_action(
-            button,
-            text=dtr("Vars", "Delete"),
+            menu,
+            text=translate("Vars", "Delete"),
             receiver=self.cmd_delete,
             icon="delete.svg",
         )
 
-        self.lock_action = add_action(
-            button,
-            text=dtr("Vars", "Unlock") if self.variable.read_only else dtr("Vars", "Lock"),
+        add_action(
+            menu,
+            text=translate("Vars", "Unlock")
+            if self.variable.read_only
+            else translate("Vars", "Lock"),
             receiver=self.cmd_lock,
             icon="unlock.svg" if self.variable.read_only else "lock.svg",
         )
 
-    def filter(self, text: str) -> None:
+        add_action(
+            menu,
+            text=translate("Vars", "Restore visibility")
+            if self.variable.hidden
+            else translate("Vars", "Hide"),
+            receiver=self.cmd_hide,
+            icon="visible.svg" if self.variable.hidden else "hidden.svg",
+        )
+
+        menu.addSeparator()
+
+        add_action(
+            menu,
+            text=translate("Vars", "Move to top"),
+            receiver=self.cmd_sort_top,
+            icon="sort-top.svg",
+        )
+
+        add_action(
+            menu,
+            text=translate("Vars", "Move up"),
+            receiver=self.cmd_sort_up,
+            icon="sort-up.svg",
+        )
+
+        add_action(
+            menu,
+            text=translate("Vars", "Move down"),
+            receiver=self.cmd_sort_down,
+            icon="sort-down.svg",
+        )
+
+        add_action(
+            menu,
+            text=translate("Vars", "Move to bottom"),
+            receiver=self.cmd_sort_bottom,
+            icon="sort-bottom.svg",
+        )
+
+        btn: ui.QToolButton = self.sender()
+        menu.exec(btn.mapToGlobal(btn.rect().bottomLeft()))
+
+    def cmd_sort_top(self) -> None:
+        self.variable.reorder(float("-inf"))
+        self.event_bus.var_reordered.emit(self)
+
+    def cmd_sort_bottom(self) -> None:
+        self.variable.reorder(float("inf"))
+        self.event_bus.var_reordered.emit(self)
+
+    def cmd_sort_up(self) -> None:
+        self.variable.reorder(-1)
+        self.event_bus.var_reordered.emit(self)
+
+    def cmd_sort_down(self) -> None:
+        self.variable.reorder(1)
+        self.event_bus.var_reordered.emit(self)
+
+    def filter(self, text: str, show_hidden: bool = False) -> None:
         if not text or text.lower() in self.variable.name.lower():
-            set_visibility(self.widget, True)
+            set_visibility(self.widget, (not self.variable.hidden) or show_hidden)
             return
         set_visibility(self.widget, False)
 
     def cmd_lock(self) -> None:
         read_only = not self.variable.read_only
         self.variable.read_only = read_only
-        self.lock(read_only)
-        action = self.lock_action
-        if read_only:
-            action.setIcon(FlatIcon(resources.icon("unlock.svg")))
-            action.setText(translate("Vars", "Unlock"))
-        else:
-            action.setIcon(FlatIcon(resources.icon("lock.svg")))
-            action.setText(translate("Vars", "Lock"))
+        self.lock_ui(read_only)
+
+    def cmd_hide(self) -> None:
+        hidden = not self.variable.hidden
+        self.variable.hidden = hidden
+        self.update_visibility_ui()
+        self.event_bus.filter_changed.emit()
 
     def cmd_rename(self) -> None:
         self.event_bus.goto_rename_var.emit(self.variable)
@@ -420,6 +495,9 @@ class VarEditor(QObject):
         if next_widget := getattr(new, "forwardFocusTo", None):
             next_widget.setFocus()
 
+    def __lt__(self, other: VarEditor) -> bool:
+        return self.variable < other.variable
+
 
 class EventBus(QObject):
     """Event bus for async inter-object communication."""
@@ -434,13 +512,17 @@ class EventBus(QObject):
     variable_changed = ui.Signal(Variable)
 
     var_renamed = ui.Signal(Variable)
-    var_deleted = ui.Signal(Variable)
+    var_delete_requested = ui.Signal(Variable)
+    var_editor_removed = ui.Signal(Variable)
     var_created = ui.Signal(Variable)
     var_edited = ui.Signal(Variable)
+    var_group_will_change = ui.Signal(Variable)
+    var_reordered = ui.Signal(object)
 
     request_focus = ui.Signal(str)
 
     remove_var_editor = ui.Signal(VarEditor)
+    filter_changed = ui.Signal()
 
     reload_vars = ui.Signal()
 
@@ -483,19 +565,36 @@ class VarGroupSection(QObject):
                     VarEditor(var, event_bus, parent=self) for var in variables if var.group == name
                 ]
 
-        event_bus.remove_var_editor.connect(self.remove_var_editor)
+        event_bus.var_delete_requested.connect(self.on_delete_requested)
+        event_bus.var_reordered.connect(self.on_var_reordered)
+        event_bus.var_group_will_change.connect(self.remove_var_editor)
 
-    def remove_var_editor(self, editor: VarEditor) -> None:
-        if editor in self.editors:
+    def on_var_reordered(self, editor: VarEditor | None) -> None:
+        if editor is None or editor in self.editors:
+            self.editors.sort()
+            layout = self.editors_layout
+            for ed in self.editors:
+                layout.removeWidget(ed.widget)
+                layout.addWidget(ed.widget)
+            layout.activate()
+
+    def on_delete_requested(self, var: Variable) -> None:
+        self.remove_var_editor(var)
+        self.event_bus.var_editor_removed.emit(var)
+
+    def remove_var_editor(self, var: Variable) -> None:
+        editors = [e for e in self.editors if e.variable == var]
+        if editors:
+            editor = editors[0]
             self.editors_layout.removeWidget(editor.widget)
             self.editors.remove(editor)
             editor.widget.deleteLater()
             editor.deleteLater()
 
-    def filter(self, text: str) -> None:
+    def filter(self, text: str, show_hidden: bool = False) -> None:
         visible = False
         for editor in self.editors:
-            editor.filter(text)
+            editor.filter(text, show_hidden)
             visible = visible or is_visible(editor.widget)
         set_visibility(self.container, visible)
 
@@ -507,7 +606,7 @@ class VarGroupSection(QObject):
             self.editors_layout.addWidget(editor.widget)
             ui.build_context().reset()
             ui.QApplication.instance().processEvents()
-            self.editors_layout.activate()
+            self.on_var_reordered(editor)
             self.event_bus.request_focus.emit(editor.editor.objectName())
 
 
@@ -573,6 +672,8 @@ class HomePage(UIPage):
     scroll: ui.QScrollArea
     auto_recompute: bool
     recompute_btn: ui.QAbstractButton
+    search: ui.InputTextWidget
+    show_hidden: bool
 
     def __init__(
         self,
@@ -582,6 +683,7 @@ class HomePage(UIPage):
     ) -> None:
         super().__init__(editor, parent)
         self.auto_recompute = False
+        self.show_hidden = preferences.Hidden.show_hidden_vars()
         with ui.Col():
             self.toolbar()
             editor.search = self.search_box()
@@ -602,7 +704,7 @@ class HomePage(UIPage):
 
     def recompute(self, var: Variable) -> None:
         if self.auto_recompute:
-            var.doc.recompute()
+            var.document.recompute()
 
     def create_sections(self, groups: list[tuple[str, list[Variable]]], add: bool = True) -> None:
         with ui.Col(spacing=10, add=add) as col:
@@ -629,10 +731,10 @@ class HomePage(UIPage):
         ui.QTimer.singleShot(100, task)
 
     def search_box(self) -> ui.QWidget:
-        with ui.Row(contentsMargins=(0, 0, 0, 0)) as row:
-            search = ui.InputText(placeholderText=str(dtr("Vars", "Search...")), stretch=1)
-            search.textChanged.connect(self.editor.cmd_filter)
-            return row
+        with ui.Row(contentsMargins=(0, 0, 0, 0)):
+            self.search = ui.InputText(placeholderText=str(dtr("Vars", "Search...")), stretch=1)
+            self.search.textChanged.connect(self.editor.cmd_filter)
+            return self.search
 
     def toolbar(self) -> ui.QWidget:
         editor = self.editor
@@ -657,6 +759,7 @@ class HomePage(UIPage):
                 tooltip=str(dtr("Vars", "Generate report table")),
                 callback=editor.cmd_report,
             )
+            self.toggle_hidden_btn()
             ui.Stretch(1)
 
             pause_icon = "recompute-pause.svg"
@@ -675,6 +778,30 @@ class HomePage(UIPage):
                 ),
             )
         return row
+
+    def toggle_hidden_btn(self) -> None:
+        visible_icon = resources.icon("visible.svg")
+        hidden_icon = resources.icon("hidden.svg")
+        visible_tooltip = translate("Vars", "Hidden vars are visible, click to hide.")
+        hidden_tooltip = translate("Vars", "Show hidden vars")
+        self.show_hidden = preferences.Hidden.show_hidden_vars()
+
+        def toggle() -> None:
+            self.show_hidden = not self.show_hidden
+            preferences.Hidden.show_hidden_vars(update=self.show_hidden)
+            if self.show_hidden:
+                btn.setIcon(FlatIcon(visible_icon))
+                btn.setToolTip(visible_tooltip)
+            else:
+                btn.setIcon(FlatIcon(hidden_icon))
+                btn.setToolTip(hidden_tooltip)
+            self.editor.cmd_filter()
+
+        btn = toolbar_button(
+            icon=visible_icon if self.show_hidden else hidden_icon,
+            tooltip=str(visible_tooltip) if self.show_hidden else str(hidden_tooltip),
+            callback=toggle,
+        )
 
     def toggle_auto_recompute(
         self,
@@ -872,7 +999,7 @@ class VarEditPage(UIPage):
 
         if var_type not in PROPERTY_INFO:
             self.messages.setText(
-                str(dtr("Vars", "Invalid property type selected.")),
+                translate("Vars", "Invalid property type selected."),
             )
             self.messages.show()
             return
@@ -1102,9 +1229,7 @@ class VarDeletePage(UIPage):
         self.event_bus.goto_home.emit()
 
     def on_delete(self) -> None:
-        if err := self.editor.do_delete_var(self.var):
-            self.message.setText(err)
-            self.message.show()
+        self.event_bus.var_delete_requested.emit(self.var)
 
     def set_var(self, var: Variable) -> None:
         self.var = var
@@ -1163,6 +1288,7 @@ class VariablesEditor(QObject):
                 dialog.move(x, y)
 
         self.init_events()
+        self.cmd_filter()
 
         @events.document.activated
         def on_document_activate(event: events.DocumentEvent) -> None:
@@ -1192,7 +1318,7 @@ class VariablesEditor(QObject):
     def get_groups(self) -> dict[str, list[Variable]]:
         supported_types = get_supported_property_types()
         variables = [v for v in get_vars(self.doc) if v.var_type in supported_types]
-        return groupby(sorted(variables, key=lambda v: v.group), lambda v: v.group)
+        return groupby(sorted(variables), lambda v: v.group)
 
     def init_events(self) -> None:
         bus = self.event_bus
@@ -1203,6 +1329,12 @@ class VariablesEditor(QObject):
         bus.goto_var_references.connect(self.cmd_var_references)
         bus.goto_delete_var.connect(self.cmd_delete_var)
         bus.var_edited.connect(self.on_var_edited)
+        bus.var_editor_removed.connect(self.do_delete_var)
+        bus.filter_changed.connect(self.cmd_filter)
+
+    def do_delete_var(self, var: Variable) -> None:
+        var.delete()
+        ui.QTimer.singleShot(10, lambda: self.event_bus.goto_home.emit())
 
     def cmd_var_references(self, var: Variable) -> None:
         self.references_page.set_var(var)
@@ -1235,14 +1367,15 @@ class VariablesEditor(QObject):
 
     def on_home(self) -> None:
         self.switch_to_page(self.home_page)
+        self.cmd_filter()
 
     def cmd_rename_var(self, var: Variable) -> None:
         self.rename_page.set_var(var)
         self.switch_to_page(self.rename_page)
 
-    def cmd_filter(self, text: str) -> None:
+    def cmd_filter(self, text: str | None = None) -> None:
         for section in self.sections:
-            section.filter(text)
+            section.filter(text or self.search.text(), self.home_page.show_hidden)
 
     def cmd_import(self) -> None:
         file = ui.get_open_file(
@@ -1335,7 +1468,7 @@ class VariablesEditor(QObject):
         return None
 
     def on_var_edited(self, var: Variable) -> None:
-        self.event_bus.var_deleted.emit(var)
+        self.event_bus.var_group_will_change.emit(var)
         self.event_bus.var_created.emit(var)
         self.event_bus.goto_home.emit()
 
@@ -1348,19 +1481,6 @@ class VariablesEditor(QObject):
             return str(dtr("Vars", "New variable name already exists."))
         except Exception as e:  # noqa: BLE001
             return str(e)
-
-    def do_delete_var(self, var: Variable) -> None | str:
-        try:
-            if var.delete():
-                self.event_bus.var_deleted.emit(var)
-                self.event_bus.goto_home.emit()
-                return None
-            return str(dtr("Vars", "Failed to delete variable."))
-        except Exception as e:  # noqa: BLE001
-            return str(e)
-
-
-_DISPLAY_LABEL_SEP = re.compile(r"_|(?=[A-Z])")
 
 
 @cache
@@ -1375,7 +1495,31 @@ def var_display_label(group: str, name: str) -> str:
         return name
 
 
+class ScrollEventFilter(QObject):
+    """
+    Prevents accidental changes on scroll.
+    """
+
+    def __init__(self, parent: QObject | None = None) -> None:
+        super().__init__(parent)
+
+    def eventFilter(self, obj: QObject, event: QEvent) -> bool:
+        if event.type() == QEvent.Type.Wheel:
+            return not (isinstance(obj, ui.QWidget) and obj.hasFocus())
+        return super().eventFilter(obj, event)
+
+    def install(self, target: ui.QWidget) -> None:
+        for child in chain(target.findChildren(ui.QWidget), [target]):
+            if isinstance(child, QAbstractSpinBox):
+                child.installEventFilter(self)
+                child.setFocusPolicy(ui.Qt.FocusPolicy.StrongFocus)
+
+
 class LockEventFilter(QObject):
+    """
+    Lock input without disabling the widget.
+    """
+
     interactive_events = frozenset((
         QEvent.Type.MouseButtonPress,
         QEvent.Type.MouseButtonRelease,
@@ -1413,3 +1557,6 @@ class LockEventFilter(QObject):
         target.removeEventFilter(self)
         for child in target.findChildren(ui.QWidget):
             child.removeEventFilter(self)
+
+
+_DISPLAY_LABEL_SEP = re.compile(r"_|(?=[A-Z])")

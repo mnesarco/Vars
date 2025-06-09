@@ -6,6 +6,7 @@ FreeCAD Vars: Variables.
 """
 
 from __future__ import annotations
+
 from pathlib import Path
 from typing import Any, TYPE_CHECKING, TypeAlias
 import operator as op
@@ -33,7 +34,7 @@ def get_vars_group(doc: Document | None = None) -> DocumentObject:
     :return: The group where variables are stored.
     """
     doc = doc or App.activeDocument()
-    group = doc.getObject("XVarGroup")
+    group: DocumentObject = doc.getObject("XVarGroup")
     if not group:
         group = doc.addObject("App::DocumentObjectGroup", "XVarGroup")
         group.Label = "Variables"
@@ -68,7 +69,7 @@ def create_var(
     name = sanitize_var_name(name)
     doc = doc or App.activeDocument()
 
-    if exists_var_name(name, doc):
+    if existing_var_name(name, doc):
         return False
 
     if var_type == "App::PropertyEnumeration":
@@ -81,11 +82,15 @@ def create_var(
 
     varset: DocumentObject = doc.addObject("App::VarSet", get_unique_name(doc))
     varset.Label = name
+
     if hasattr(varset, "Label2"):
         varset.Label2 = description
+
     if callable(options):
         options = options()
+
     varset.addProperty(var_type, "Value", "", description, enum_vals=options)
+
     varset.addProperty(
         "App::PropertyString",
         "Description",
@@ -93,6 +98,8 @@ def create_var(
         "Variable Description",
         PropertyMode.Output | PropertyMode.NoRecompute,
     )
+    varset.Description = description or ""
+
     varset.addProperty(
         "App::PropertyString",
         "VarGroup",
@@ -100,14 +107,31 @@ def create_var(
         "Variable Group",
         PropertyMode.Output | PropertyMode.NoRecompute,
     )
+    varset.VarGroup = (group or "Default").title()
+
+    varset.addProperty(
+        "App::PropertyInteger",
+        "SortKey",
+        "",
+        "Variable Sort Key",
+        PropertyMode.Output | PropertyMode.NoRecompute,
+    )
+    varset.SortKey = 0
+
+    varset.addProperty(
+        "App::PropertyBool",
+        "Hidden",
+        "",
+        "Hide variable from UI",
+        PropertyMode.Output | PropertyMode.NoRecompute,
+    )
+    varset.Hidden = False
+
     if expression:
         varset.setExpression("Value", expression, "Calculated")
         varset.recompute()
     elif value is not None:
         varset.Value = value
-
-    varset.VarGroup = (group or "Default").title()
-    varset.Description = description or ""
 
     if preferences.hide_varsets():
         varset.ViewObject.ShowInTree = False
@@ -130,25 +154,9 @@ def rename_var(
     :param new_name: The new label name of the variable.
     :param description: The new description of the variable, if any.
     :param doc: The document where the variable exists. Defaults to the active document.
-    :return: True if the variable was found and renamed, False otherwise.
+    :return: True if the variable was renamed, False otherwise. raise error if var does not exists.
     """
-    new_name = sanitize_var_name(new_name)
-    doc = doc or App.activeDocument()
-
-    if (actual_name := exists_var_name(new_name, doc)) and actual_name.lower() != name.lower():
-        return False
-
-    if varset := get_varset(name, doc):
-        varset.Label = new_name
-        if description:
-            varset.setDocumentationOfProperty("Value", description)
-            if hasattr(varset, "Description"):
-                varset.Description = description
-            if hasattr(varset, "Label2"):
-                varset.Label2 = description
-        doc.recompute()
-        return True
-    return False
+    return Variable(doc or App.activeDocument(), name).rename(new_name, description)
 
 
 def delete_var(name: str, doc: Document | None = None) -> bool:
@@ -159,11 +167,7 @@ def delete_var(name: str, doc: Document | None = None) -> bool:
     :param doc: The document where the variable exists. Defaults to the active document.
     :return: True if the variable was found and deleted, False otherwise.
     """
-    doc = doc or App.activeDocument()
-    if varset := get_varset(name, doc):
-        doc.removeObject(varset.Name)
-        return True
-    return False
+    return Variable(doc or App.activeDocument(), name).delete()
 
 
 def get_var(name: str, doc: Document | None = None) -> Any:
@@ -176,14 +180,9 @@ def get_var(name: str, doc: Document | None = None) -> Any:
 
     :param name: The label name of the variable.
     :param doc: The document where to search for the variable. Defaults to ActiveDocument.
-    :return: The value of the variable or None if not found.
+    :return: The value of the variable or raise error if not found.
     """
-    doc = doc or App.activeDocument()
-    objects: list[DocumentObject] = doc.getObjectsByLabel(name)
-    for obj in objects:
-        if (value := getattr(obj, "Value", None)) and obj.Name.startswith("XVar_"):
-            return value
-    return None
+    return Variable(doc or App.activeDocument(), name).value
 
 
 def get_varset(name: str, doc: Document | None = None) -> DocumentObject | None:
@@ -207,69 +206,37 @@ def get_varset(name: str, doc: Document | None = None) -> DocumentObject | None:
     return None
 
 
-def set_var(name: str, value: Any, doc: Document | None = None) -> bool:
+def set_var(name: str, value: Any, doc: Document | None = None) -> None:
     """
     Set the value of an existing variable.
 
     :param name: The name of the variable to set.
     :param value: The new value to assign to the variable.
     :param doc: The document where the variable exists. Defaults to the active document.
-    :return: True if the variable was found and set, False otherwise.
     """
-    doc = doc or App.activeDocument()
-    if varset := get_varset(name, doc):
-        attr = varset.Value
-        if isinstance(attr, App.Units.Quantity):
-            if isinstance(value, str):
-                varset.Value = App.Units.Quantity(value)
-            elif isinstance(value, tuple):
-                varset.Value = App.Units.Quantity(*value)
-            else:
-                varset.Value = value
-        else:
-            varset.Value = value
-        return True
-    return False
+    Variable(doc or App.activeDocument(), name).value = value
 
 
-def set_var_description(name: str, description: str, doc: Document | None = None) -> bool:
+def set_var_description(name: str, description: str, doc: Document | None = None) -> None:
     """
     Set the description of an existing variable.
 
     :param name: The name of the variable to modify.
     :param description: The new description to assign to the variable.
     :param doc: The document where the variable exists. Defaults to the active document.
-    :return: True if the variable was found and set, False otherwise.
     """
-    doc = doc or App.activeDocument()
-    if varset := get_varset(name, doc):
-        varset.setDocumentationOfProperty("Value", description)
-        if hasattr(varset, "Description"):
-            varset.Description = description
-        if hasattr(varset, "Label2"):
-            varset.Label2 = description
-        return True
-    return False
+    Variable(doc or App.activeDocument(), name).description = description
 
 
-def set_var_options(name: str, options: VarOptions, doc: Document | None = None) -> bool:
+def set_var_options(name: str, options: VarOptions, doc: Document | None = None) -> None:
     """
     Set the options of an existing variable.
 
     :param name: The name of the variable to modify.
     :param options: The new options to assign to the variable.
     :param doc: The document where the variable exists. Defaults to the active document.
-    :return: True if the variable was found and set, False otherwise.
     """
-    if options is None:
-        msg = "options cannot be None"
-        raise ValueError(msg)
-
-    doc = doc or App.activeDocument()
-    if varset := get_varset(name, doc):
-        varset.Value = options() if callable(options) else options
-        return True
-    return False
+    Variable(doc or App.activeDocument(), name).options = options
 
 
 def get_var_options(name: str, doc: Document | None = None) -> list[str]:
@@ -278,15 +245,12 @@ def get_var_options(name: str, doc: Document | None = None) -> list[str]:
 
     :param name: The name of the variable.
     :param doc: The document where the variable exists. Defaults to the active document.
-    :return: The options of the variable as a list of strings if found, otherwise an empty list.
+    :return: The options of the variable as a list of strings if found, raise otherwise.
     """
-    doc = doc or App.activeDocument()
-    if varset := get_varset(name, doc):
-        return varset.getEnumerationsOfProperty("Value") or []
-    return []
+    return Variable(doc or App.activeDocument(), name).options
 
 
-def set_var_expression(name: str, expression: str | None, doc: Document | None = None) -> bool:
+def set_var_expression(name: str, expression: str | None, doc: Document | None = None) -> None:
     """
     Set the expression of an existing variable.
 
@@ -294,16 +258,8 @@ def set_var_expression(name: str, expression: str | None, doc: Document | None =
     :param expression: The new expression to assign to the variable.
                        If None, the expression is cleared.
     :param doc: The document where the variable exists. Defaults to the active document.
-    :return: True if the variable was found and set, False otherwise.
     """
-    doc = doc or App.activeDocument()
-    if varset := get_varset(name, doc):
-        if not expression:
-            varset.clearExpression("Value")
-            return True
-        varset.setExpression("Value", expression)
-        return True
-    return False
+    Variable(doc or App.activeDocument(), name).expression = expression
 
 
 def get_var_expression(name: str, doc: Document | None = None) -> str | None:
@@ -318,28 +274,18 @@ def get_var_expression(name: str, doc: Document | None = None) -> str | None:
     :param doc: The document where to search for the variable. Defaults to ActiveDocument.
     :return: The expression as a string if found, otherwise None.
     """
-    doc = doc or App.activeDocument()
-    if (varset := get_varset(name, doc)) and varset.ExpressionEngine:
-        for prop, expr, *_ in varset.ExpressionEngine:
-            if prop == "Value":
-                return expr
-    return None
+    return Variable(doc or App.activeDocument(), name).expression
 
 
-def set_var_group(name: str, group: str, doc: Document | None = None) -> bool:
+def set_var_group(name: str, group: str, doc: Document | None = None) -> None:
     """
     Set the group of an existing variable.
 
     :param name: The name of the variable to modify.
     :param group: The new group to assign to the variable.
     :param doc: The document where the variable exists. Defaults to the active document.
-    :return: True if the variable was found and set, False otherwise.
     """
-    doc = doc or App.activeDocument()
-    if varset := get_varset(name, doc):
-        varset.VarGroup = (group or "Default").title()
-        return True
-    return False
+    Variable(doc or App.activeDocument(), name).group = group
 
 
 def get_var_group(name: str, doc: Document | None = None) -> str:
@@ -350,10 +296,7 @@ def get_var_group(name: str, doc: Document | None = None) -> str:
     :param doc: The document where the variable exists. Defaults to the active document.
     :return: The group of the variable.
     """
-    doc = doc or App.activeDocument()
-    if varset := get_varset(name, doc):
-        return varset.VarGroup or "Default"
-    return "Default"
+    return Variable(doc or App.activeDocument(), name).group
 
 
 def sanitize_var_name(name: str) -> str:
@@ -527,6 +470,9 @@ def export_variables(path: str | Path, doc: Document | None = None) -> bool:
             group=var.group,
             expression=var.expression,
             options=var.options,
+            read_only=var.read_only,
+            hidden=var.hidden,
+            sort_key=var.varset.SortKey,
         )
         for var in variables
     ]
@@ -586,6 +532,10 @@ def import_variables(path: str | Path, doc: Document | None = None) -> bool:
                     f"Variable '{var.name}' value ({var.value}) is not valid. (Ignored)\n",
                 )
 
+        doc_var.read_only = var.read_only
+        doc_var.hidden = var.hidden
+        doc_var._set_sort_key(var.sort_key)  # noqa: SLF001
+
     return True
 
 
@@ -596,6 +546,7 @@ class Variable:
 
     _name: str
     _doc: Document
+    _obj: DocumentObject | None = None
 
     def __init__(self, doc: Document, name: str) -> None:
         """
@@ -612,6 +563,7 @@ class Variable:
         name = sanitize_var_name(name)
         self._name = name
         self._doc = doc
+        self._obj = get_varset(name, doc)
 
     def create_if_not_exists(
         self,
@@ -647,6 +599,7 @@ class Variable:
             doc=self._doc,
             group=group,
         )
+        self._obj = get_varset(self._name, self._doc)
         return self
 
     @property
@@ -655,120 +608,164 @@ class Variable:
 
     @property
     def value(self) -> Any:
-        return get_var(self._name, self._doc)
+        return self.varset.Value
 
     @value.setter
     def value(self, value: Any) -> None:
-        set_var(self._name, value, self._doc)
+        varset = self.varset
+        attr = varset.Value
+        if isinstance(attr, App.Units.Quantity):
+            if isinstance(value, str):
+                varset.Value = App.Units.Quantity(value)
+            elif isinstance(value, tuple):
+                varset.Value = App.Units.Quantity(*value)
+            else:
+                varset.Value = value
+        else:
+            varset.Value = value
 
-    def rename(self, new_name: str) -> bool:
-        if rename_var(self._name, new_name, doc=self._doc):
-            self._name = new_name
-            return True
-        return False
+    def rename(self, new_name: str, description: str | None = None) -> bool:
+        varset = self.varset
+        new_name = sanitize_var_name(new_name)
+        actual_name = existing_var_name(new_name, self._doc)
+
+        if actual_name and actual_name.lower() != self._name.lower():
+            return False
+
+        varset.Label = new_name
+        self._name = new_name
+        if description:
+            varset.setDocumentationOfProperty("Value", description)
+            if hasattr(varset, "Description"):
+                varset.Description = description
+            if hasattr(varset, "Label2"):
+                varset.Label2 = description
+        self._doc.recompute()
+        return True
 
     @property
     def options(self) -> list[str]:
-        return get_var_options(self._name, self._doc)
+        return self.varset.getEnumerationsOfProperty("Value") or []
 
     @options.setter
     def options(self, options: VarOptions) -> None:
-        set_var_options(self._name, options, doc=self._doc)
+        if callable(options):
+            options = options()
+        if isinstance(options, (list, tuple)):
+            self.varset.Value = options
+        else:
+            msg = "invalid options type, must be list, tuple or callable returning a list"
+            raise TypeError(msg)
 
     @property
     def expression(self) -> str | None:
-        return get_var_expression(self._name, doc=self._doc)
+        if (varset := self.varset) and varset.ExpressionEngine:
+            for prop, expr, *_ in varset.ExpressionEngine:
+                if prop == "Value":
+                    return expr
+        return None
 
     @expression.setter
     def expression(self, expression: str | None) -> None:
-        set_var_expression(self._name, expression, doc=self._doc)
+        if not expression:
+            self.varset.clearExpression("Value")
+        self.varset.setExpression("Value", expression)
 
     def __repr__(self) -> str:
-        return f"Variable(name={self._name}, value={self.value})"
+        return f"Variable(name={self.name}, value={self.value})"
 
     def exists(self) -> bool:
-        return bool(exists_var_name(self._name, self._doc))
+        try:
+            return bool(self.varset)
+        except ValueError:
+            return False
 
     def delete(self) -> bool:
-        return delete_var(self._name, doc=self._doc)
+        try:
+            self._doc.removeObject(self.varset.Name)
+            self._obj = None
+        except ValueError:
+            return False
+        return True
 
     @property
     def dependencies(self) -> list[DocumentObject]:
-        if varset := get_varset(self._name, self._doc):
-            return list(set(varset.OutList)) or []
-        return []
+        return list(set(self.varset.OutList)) or []
 
     @property
     def references(self) -> list[DocumentObject]:
-        if varset := get_varset(self._name, self._doc):
-            return list(set(varset.InList)) or []
-        return []
+        return list(set(self.varset.InList)) or []
 
     @property
     def description(self) -> str:
-        if varset := get_varset(self._name, self._doc):
-            return (
-                getattr(varset, "Description", "")
-                or varset.getDocumentationOfProperty("Value")
-                or ""
-            )
-        return ""
+        varset = self.varset
+        return (
+            getattr(varset, "Description", "")
+            or varset.getDocumentationOfProperty("Value")
+            or getattr(varset, "Label2", "")
+            or ""
+        )
 
     @description.setter
     def description(self, description: str) -> None:
-        set_var_description(self._name, description, doc=self._doc)
+        varset = self.varset
+        varset.setDocumentationOfProperty("Value", description)
+        if hasattr(varset, "Description"):
+            varset.Description = description
+        if hasattr(varset, "Label2"):
+            varset.Label2 = description
 
     @property
     def group(self) -> str:
-        return get_var_group(self._name, doc=self._doc)
+        return self.varset.VarGroup or "Default"
 
     @group.setter
     def group(self, group: str) -> None:
-        set_var_group(self._name, group, doc=self._doc)
+        self.varset.VarGroup = (group or "Default").title()
 
     @property
-    def var_type(self) -> str | None:
-        if varset := get_varset(self._name, self._doc):
-            return varset.getTypeIdOfProperty("Value")
-        return None
+    def var_type(self) -> str:
+        return self.varset.getTypeIdOfProperty("Value")
 
     @property
     def varset(self) -> DocumentObject | None:
-        return get_varset(self._name, self._doc)
+        varset = self._obj
+        if not varset:
+            self._obj = varset = get_varset(self._name, self._doc)
+            if not varset:
+                msg = f"Variable {self._name} does not exists"
+                raise ValueError(msg)
+        return varset
 
     @property
-    def internal_name(self) -> str | None:
-        if varset := get_varset(self._name, self._doc):
-            return varset.Name
-        return None
+    def internal_name(self) -> str:
+        return self.varset.Name
 
     @property
-    def doc(self) -> Document:
+    def document(self) -> Document:
         return self._doc
 
     @property
     def editor_mode(self) -> list[str]:
-        if varset := get_varset(self._name, self._doc):
-            return varset.getPropertyStatus("Value")
-        return []
+        return self.varset.getEditorMode("Value")
 
     @editor_mode.setter
     def editor_mode(self, value: str | list[str]) -> None:
+        varset = self.varset
         modes = {
             "ReadOnly": (op.or_, 1),
             "Hidden": (op.or_, 2),
             "-ReadOnly": (op.and_, ~1),
             "-Hidden": (op.and_, ~2),
         }
-        if varset := get_varset(self._name, self._doc):
-            if not isinstance(value, list):
-                value = [value]
-            ops = [modes.get(v) for v in varset.getEditorMode("Value")]
-            ops.extend(modes.get(v, (op.or_, 0)) for v in value)
-            mode = 0
-            for f, v in ops:
-                mode = f(mode, v)
-            varset.setEditorMode("Value", mode)
+        if not isinstance(value, list):
+            value = [value]
+        ops = [modes.get(v) for v in varset.getEditorMode("Value")]
+        ops.extend(modes.get(v, (op.or_, 0)) for v in value)
+        mode = 0
+        for f, v in ops:
+            mode = f(mode, v)
+        varset.setEditorMode("Value", mode)
 
     @property
     def read_only(self) -> bool:
@@ -777,6 +774,82 @@ class Variable:
     @read_only.setter
     def read_only(self, ro: bool) -> None:
         self.editor_mode = "ReadOnly" if ro else "-ReadOnly"
+
+    @property
+    def hidden(self) -> bool:
+        try:
+            return self.varset.Hidden
+        except AttributeError:
+            return False
+
+    @hidden.setter
+    def hidden(self, value: bool) -> None:
+        varset = self.varset
+        if not hasattr(varset, "Hidden"):
+            varset.addProperty(
+                "App::PropertyBool",
+                "Hidden",
+                "",
+                "Hide variable from UI",
+                PropertyMode.Output | PropertyMode.NoRecompute,
+            )
+        varset.Hidden = value
+
+    @property
+    def sort_key(self) -> tuple[str | int, ...]:
+        try:
+            return (self.group, self.varset.SortKey, self.name)
+        except AttributeError:
+            return (self.group, 0, self.name)
+
+    def _set_sort_key(self, key: int) -> None:
+        varset = self.varset
+        if not hasattr(varset, "SortKey"):
+            varset.addProperty(
+                "App::PropertyInteger",
+                "SortKey",
+                "",
+                "Variable Sort Key",
+                PropertyMode.Output | PropertyMode.NoRecompute,
+            )
+        varset.SortKey = key
+
+    def reorder(self, delta: float) -> None:
+        group = self.group
+        group_vars = sorted(v for v in get_vars() if v.group == group)
+        for pos, var in enumerate(group_vars):
+            var._set_sort_key(pos)  # noqa: SLF001
+
+        seek = self.varset.SortKey + delta
+        offset = 0
+        ins = -1
+        for pos, var in enumerate(v for v in group_vars if v.internal_name != self.internal_name):
+            if pos >= seek and offset == 0:
+                ins = pos
+                offset = 1
+            var._set_sort_key(pos + offset)  # noqa: SLF001
+        self._set_sort_key(ins if ins > -1 else len(group_vars))
+
+    def __lt__(self, other: Variable) -> bool:
+        return self.sort_key < other.sort_key
+
+    def __eq__(self, other: Variable) -> bool:
+        if self.exists() and other.exists():
+            return self.internal_name == other.internal_name
+        return self.name == other.name and self.document == other.document
+
+    @hidden.setter
+    def hidden(self, value: bool) -> None:
+        varset = self.varset
+        if not hasattr(varset, "Hidden"):
+            varset.addProperty(
+                "App::PropertyBool",
+                "Hidden",
+                "",
+                "Hide variable from UI",
+                PropertyMode.Output | PropertyMode.NoRecompute,
+            )
+        varset.Hidden = value
 
     def change_var_type(
         self,
@@ -791,7 +864,7 @@ class Variable:
         )
 
 
-def exists_var_name(name: str, doc: Document | None = None) -> str | None:
+def existing_var_name(name: str, doc: Document | None = None) -> str | None:
     """
     Check if a variable name exists in the document (case insensitive).
 

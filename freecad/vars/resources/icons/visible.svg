@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   id="Layer_1"
+   data-name="Layer 1"
+   viewBox="0 0 64.000001 64"
+   version="1.1"
+   sodipodi:docname="visible.svg"
+   width="64"
+   height="64"
+   inkscape:version="1.4.2 (ebf0e940d0, 2025-05-08)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="11.850983"
+     inkscape:cx="61.429505"
+     inkscape:cy="34.09"
+     inkscape:window-width="1920"
+     inkscape:window-height="1021"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="Layer_1" />
+  <defs
+     id="defs1">
+    <style
+       id="style1">.cls-1{fill-rule:evenodd;}</style>
+  </defs>
+  <title
+     id="title1">view</title>
+  <path
+     class="cls-1"
+     d="m 31.994861,22.102464 a 9.9157534,9.9157534 0 1 1 -7.001079,2.929322 9.881578,9.881578 0 0 1 7.001079,-2.929322 z M 2.5112391,30.64632 a 52.102866,52.102866 0 0 1 5.0384331,-5.311838 c 7.0157258,-6.385921 14.9932438,-9.79858 23.2539318,-9.974339 8.260686,-0.17576 16.643428,2.890264 24.581889,9.432415 a 59.518932,59.518932 0 0 1 6.122282,5.858644 1.9528811,1.9528811 0 0 1 0.122056,2.4411 38.999034,38.999034 0 0 1 -7.508828,8.011695 A 33.945955,33.945955 0 0 1 32.966419,48.647 37.104739,37.104739 0 0 1 11.35779,41.636157 43.62248,43.62248 0 0 1 2.4184773,33.150889 1.9235878,1.9235878 0 0 1 2.5112391,30.64632 Z m 7.6308829,-2.441102 a 48.529093,48.529093 0 0 0 -3.7055919,3.754413 39.47749,39.47749 0 0 0 7.1377809,6.527505 33.325915,33.325915 0 0 0 19.377462,6.312689 30.118307,30.118307 0 0 0 18.75254,-6.698382 34.585523,34.585523 0 0 0 5.858643,-6.00511 53.923927,53.923927 0 0 0 -4.638093,-4.325631 C 45.723614,21.833943 38.165965,19.060852 30.857307,19.2122 23.548651,19.363549 16.464574,22.429572 10.142122,28.185689 Z m 19.377462,-3.803236 a 3.8422934,3.8422934 0 1 1 -3.842293,3.842294 3.8374113,3.8374113 0 0 1 3.842293,-3.842294 z"
+     id="path1"
+     style="stroke-width:1" />
+  <metadata
+     id="metadata1">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:title>view</dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+</svg>
