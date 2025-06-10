@@ -1267,12 +1267,14 @@ class VariablesEditor(QObject):
         self.setObjectName(self.QObjectName)
         self.doc = doc
         groups = self.get_groups()
+        x, y, w, h = self.get_geometry()
 
         with ui.Dialog(
             title=str(dtr("Vars", "Variables")),
             styleSheet=stylesheet,
             modal=False,
             parent=App.Gui.getMainWindow(),
+            size=(w, h),
         ) as dialog:
             dialog.setAttribute(ui.Qt.WidgetAttribute.WA_DeleteOnClose, False)
             self.dialog = dialog
@@ -1285,12 +1287,9 @@ class VariablesEditor(QObject):
                 self.references_page = VarReferencesPage(self, dialog)
                 self.delete_page = VarDeletePage(self, dialog)
 
-            dialog.setMinimumSize(400, 600)
-            x, y, w, h = self.get_geometry()
-            if w and h:
-                dialog.resize(w, h)
-            if x or y:
-                dialog.move(x, y)
+        if x or y:
+            dialog.setGeometry(x, y, w, h)
+        QTimer.singleShot(0, self.ensure_valid_geometry)
 
         self.init_events()
         self.cmd_filter()
@@ -1329,26 +1328,27 @@ class VariablesEditor(QObject):
             self.dialog.close()
             self.dialog.deleteLater()
 
+    def ensure_valid_geometry(self) -> None:
+        dialog_geom = self.dialog.frameGeometry()
+        for screen in (s.availableGeometry() for s in QApplication.screens()):
+            if screen.intersects(dialog_geom):
+                return
+        screen_center = QApplication.primaryScreen().availableGeometry().center()
+        self.dialog.move(screen_center - dialog_geom.center())
+
     def get_geometry(self) -> tuple[int, int, int, int]:
         x = self.q_settings.value("x", 0, int)
         y = self.q_settings.value("y", 0, int)
-        w = self.q_settings.value("w", 400, int)
-        h = self.q_settings.value("h", 600, int)
-
-        screens = QApplication.screens()
-        for screen in screens:
-            if screen.availableGeometry().contains(x, y):
-                return x, y, w, h
-
-        return 0, 0, 400, 600
+        w = self.q_settings.value("w", 0, int)
+        h = self.q_settings.value("h", 0, int)
+        return max(x, 0), max(y, 0), max(w, 400), max(h, 500)
 
     def on_move_or_resize(self, _e) -> None:
-        pos = self.dialog.pos()
-        size = self.dialog.size()
-        self.q_settings.setValue("x", pos.x())
-        self.q_settings.setValue("y", pos.y())
-        self.q_settings.setValue("w", size.width())
-        self.q_settings.setValue("h", size.height())
+        geom = self.dialog.geometry()
+        self.q_settings.setValue("x", geom.left())
+        self.q_settings.setValue("y", geom.top())
+        self.q_settings.setValue("w", geom.width())
+        self.q_settings.setValue("h", geom.height())
 
     def get_groups(self) -> dict[str, list[Variable]]:
         supported_types = get_supported_property_types()
