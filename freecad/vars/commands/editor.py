@@ -21,7 +21,16 @@ class EditVars:
     def on_activated(self) -> None:
         from freecad.vars.ui.editors import VariablesEditor
 
-        _editor = VariablesEditor(App.activeDocument())
+        editors: list[VariablesEditor] = App.Gui.getMainWindow().findChildren(
+            VariablesEditor,
+            VariablesEditor.QObjectName,
+        )
+
+        if editors:
+            for editor in editors:
+                editor.close()
+
+        VariablesEditor(App.activeDocument())
 
     def is_active(self) -> bool:
         return bool(App.GuiUp and App.activeDocument())
