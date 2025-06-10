@@ -137,7 +137,7 @@
     </message>
     <message>
         <location filename="../../commands/editor.py" line="11"/>
-        <location filename="../../ui/editors.py" line="1272"/>
+        <location filename="../../ui/editors.py" line="1273"/>
         <source>Variables</source>
         <translation type="unfinished"></translation>
     </message>
