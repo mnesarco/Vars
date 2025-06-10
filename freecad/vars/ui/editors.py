@@ -41,11 +41,11 @@ if TYPE_CHECKING:
     from collections.abc import Callable
     from collections.abc import Generator
     from FreeCAD import Document, DocumentObject  # type: ignore
-    from PySide6.QtWidgets import QGraphicsOpacityEffect, QCompleter, QMenu, QAbstractSpinBox
+    from PySide6.QtWidgets import QGraphicsOpacityEffect, QCompleter, QMenu, QAbstractSpinBox, QApplication
     from PySide6.QtCore import QSettings, QObject, QEvent, QTimer
 
 if not TYPE_CHECKING:
-    from PySide.QtGui import QGraphicsOpacityEffect, QCompleter, QMenu, QAbstractSpinBox
+    from PySide.QtGui import QGraphicsOpacityEffect, QCompleter, QMenu, QAbstractSpinBox, QApplication
     from PySide.QtCore import QSettings, QObject, QEvent, QTimer
 
 style_vars = {
@@ -1285,6 +1285,7 @@ class VariablesEditor(QObject):
                 self.references_page = VarReferencesPage(self, dialog)
                 self.delete_page = VarDeletePage(self, dialog)
 
+            dialog.setMinimumSize(400, 600)
             x, y, w, h = self.get_geometry()
             if w and h:
                 dialog.resize(w, h)
@@ -1331,9 +1332,15 @@ class VariablesEditor(QObject):
     def get_geometry(self) -> tuple[int, int, int, int]:
         x = self.q_settings.value("x", 0, int)
         y = self.q_settings.value("y", 0, int)
-        w = self.q_settings.value("w", 800, int)
+        w = self.q_settings.value("w", 400, int)
         h = self.q_settings.value("h", 600, int)
-        return x, y, w, h
+
+        screens = QApplication.screens()
+        for screen in screens:
+            if screen.availableGeometry().contains(x, y):
+                return x, y, w, h
+
+        return 0, 0, 400, 600
 
     def on_move_or_resize(self, _e) -> None:
         pos = self.dialog.pos()
