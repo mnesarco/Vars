@@ -18,6 +18,7 @@ from freecad.vars.config import preferences
 import FreeCAD as App  # type: ignore
 from collections.abc import Callable
 import contextlib
+from dataclasses import dataclass
 
 if TYPE_CHECKING:
     from FreeCAD import Document, DocumentObject  # type: ignore
@@ -862,6 +863,66 @@ class Variable:
             doc=self._doc,
             converter=converter,
         )
+
+
+@dataclass
+class VarGroup:
+    """Virtual Variables group."""
+
+    doc: Document
+    name: str
+    sort_key: float = float("inf")
+    hidden: bool = False
+
+    def __lt__(self, other: VarGroup) -> bool:
+        return self.sort_key < other.sort_key
+
+    def rename(self, new_name: str) -> None:
+        new_name = new_name.strip().title()
+        for var in get_vars():
+            if var.group == self.name:
+                var.group = new_name
+        self.name = new_name
+
+    def variables(self) -> list[Variable]:
+        return sorted([v for v in get_vars(self.doc) if v.group == self.name])
+
+
+class VarContainer:
+    """DocumentObject Group to collect all Vars and manage groups."""
+
+    obj: DocumentObject
+
+    def __init__(self, doc: Document | None = None) -> None:
+        self.obj = get_vars_group(doc)
+        if "Sort" not in self.obj.PropertiesList:
+            self.obj.addProperty("App::PropertyString", "Sort", "", "Group sorting", 2)
+        if "Hidden" not in self.obj.PropertiesList:
+            self.obj.addProperty("App::PropertyString", "Hidden", "", "Group visibility", 2)
+
+    def groups(self) -> list[VarGroup]:
+        names = set(get_groups(self.obj.Document))
+        order = {name: pos for pos, name in enumerate(self.obj.Sort.split("\n"))}
+        hidden = set(self.obj.Hidden.split("\n"))
+        doc = self.obj.Document
+        groups = sorted([
+            VarGroup(
+                doc,
+                name,
+                order.get(name, float("inf")),
+                name in hidden,
+            )
+            for name in names
+        ])
+        for i, g in enumerate(groups):
+            g.sort_key = i
+        return groups
+
+    def reorder(self, names: list[str]) -> None:
+        self.obj.Sort = "\n".join(names)
+
+    def set_hidden(self, names: list[str]) -> None:
+        self.obj.Hidden = "\n".join(names)
 
 
 def existing_var_name(name: str, doc: Document | None = None) -> str | None:

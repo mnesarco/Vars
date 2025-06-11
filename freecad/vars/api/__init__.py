@@ -23,5 +23,7 @@ from freecad.vars.core.variables import (
     set_var_options,
     export_variables,
     import_variables,
+    VarContainer,
+    VarGroup,
     Variable,
 )

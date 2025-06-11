@@ -17,18 +17,19 @@ from freecad.vars.vendor.fcapi.lang import dtr, translate
 from freecad.vars.vendor.fcapi import fcui as ui
 from freecad.vars.api import (
     Variable,
-    get_vars,
     get_groups,
     create_var,
     export_variables,
     import_variables,
+    VarGroup,
+    VarContainer,
 )
 from freecad.vars.core.properties import (
     PROPERTY_INFO,
     PropertyAccessorAdapter,
     get_supported_property_types,
 )
-from itertools import groupby, chain
+from itertools import chain
 from freecad.vars.config import preferences, resources
 from .style import FlatIcon, interpolate_style_vars, TEXT_COLOR
 from textwrap import shorten, dedent
@@ -38,14 +39,25 @@ from . import widgets as uix
 import FreeCAD as App  # type: ignore
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-    from collections.abc import Generator
+    from collections.abc import Generator, Callable
     from FreeCAD import Document, DocumentObject  # type: ignore
-    from PySide6.QtWidgets import QGraphicsOpacityEffect, QCompleter, QMenu, QAbstractSpinBox, QApplication
+    from PySide6.QtWidgets import (
+        QGraphicsOpacityEffect,
+        QCompleter,
+        QMenu,
+        QAbstractSpinBox,
+        QApplication,
+    )
     from PySide6.QtCore import QSettings, QObject, QEvent, QTimer
 
 if not TYPE_CHECKING:
-    from PySide.QtGui import QGraphicsOpacityEffect, QCompleter, QMenu, QAbstractSpinBox, QApplication
+    from PySide.QtGui import (
+        QGraphicsOpacityEffect,
+        QCompleter,
+        QMenu,
+        QAbstractSpinBox,
+        QApplication,
+    )
     from PySide.QtCore import QSettings, QObject, QEvent, QTimer
 
 style_vars = {
@@ -509,6 +521,7 @@ class EventBus(QObject):
     goto_rename_var = ui.Signal(Variable)
     goto_delete_var = ui.Signal(Variable)
     goto_var_references = ui.Signal(Variable)
+    goto_groups = ui.Signal()
 
     variable_changed = ui.Signal(Variable)
 
@@ -759,6 +772,11 @@ class HomePage(UIPage):
                 icon="table.svg",
                 tooltip=str(dtr("Vars", "Generate report table")),
                 callback=editor.cmd_report,
+            )
+            toolbar_button(
+                icon="groups.svg",
+                tooltip=str(dtr("Vars", "Manage groups")),
+                callback=editor.cmd_manage_groups,
             )
             self.toggle_hidden_btn()
             ui.Stretch(1)
@@ -1079,6 +1097,185 @@ class ReferencesTable:
                     yield [f"{obj.Label}", prop, expr, obj.Name]
 
 
+class GroupItem(ui.QFrame):
+    """
+    Group editor row.
+    """
+
+    order_changed = ui.Signal()
+    name_changed = ui.Signal()
+
+    group: VarGroup
+    rename_input: ui.QLineEdit
+
+    def __init__(self, group: VarGroup, parent: ui.QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.group = group
+
+        self.rename_input = ui.QLineEdit(self)
+        self.rename_input.setText(self.group.name)
+
+        self.menu = ui.QToolButton(self)
+        self.menu.setText("...")
+        self.menu.setPopupMode(ui.QToolButton.ToolButtonPopupMode.InstantPopup)
+        self.menu.setArrowType(ui.Qt.ArrowType.NoArrow)
+        self.menu.setToolButtonStyle(ui.Qt.ToolButtonStyle.ToolButtonTextOnly)
+        self.menu.setStyleSheet("QToolButton::menu-indicator { image: none; }")
+        self.menu.setFocusPolicy(ui.Qt.FocusPolicy.NoFocus)
+
+        hidden_btn = ui.QToolButton(self)
+        hidden_btn.setIcon(
+            FlatIcon(
+                resources.icon("hidden_ind.svg" if group.hidden else "visible.svg"),
+            ),
+        )
+        hidden_btn.setToolButtonStyle(ui.Qt.ToolButtonStyle.ToolButtonIconOnly)
+        hidden_btn.setToolTip(translate("Vars", "Toggle visibility"))
+        hidden_btn.setFocusPolicy(ui.Qt.FocusPolicy.NoFocus)
+        hidden_btn.clicked.connect(self.on_toggle_visibility)
+
+        add_action(
+            self.menu,
+            text=translate("Vars", "Move to top"),
+            icon="sort-top.svg",
+            receiver=lambda: self.reordered(float("-inf")),
+        )
+
+        add_action(
+            self.menu,
+            text=translate("Vars", "Move up"),
+            icon="sort-up.svg",
+            receiver=lambda: self.reordered(-1.5),
+        )
+
+        add_action(
+            self.menu,
+            text=translate("Vars", "Move down"),
+            icon="sort-down.svg",
+            receiver=lambda: self.reordered(1.5),
+        )
+
+        add_action(
+            self.menu,
+            text=translate("Vars", "Move to bottom"),
+            icon="sort-bottom.svg",
+            receiver=lambda: self.reordered(float("inf")),
+        )
+
+        layout = ui.QHBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(2)
+        layout.addWidget(self.rename_input, 1)
+        layout.addWidget(hidden_btn)
+        layout.addWidget(self.menu)
+        self.setLayout(layout)
+
+    def on_toggle_visibility(self) -> None:
+        group = self.group
+        group.hidden = not group.hidden
+        self.sender().setIcon(
+            FlatIcon(
+                resources.icon("hidden_ind.svg" if group.hidden else "visible.svg"),
+            ),
+        )
+
+
+    def reordered(self, delta: float) -> None:
+        self.group.sort_key = self.group.sort_key + delta
+        self.order_changed.emit()
+
+    def __lt__(self, other: GroupItem) -> bool:
+        return self.group < other.group
+
+    def apply_changes(self) -> None:
+        new_name = self.rename_input.text().strip().title()
+        if new_name != self.group.name:
+            self.group.rename(new_name)
+            self.name_changed.emit()
+
+
+class GroupManagementPage(UIPage):
+    """View: Reorder/Rename groups."""
+
+    container: VarContainer
+    editors_layout: ui.QVBoxLayout
+    editors: list[GroupItem]
+    root: ui.QWidget
+
+    def __init__(
+        self,
+        editor: VariablesEditor,
+        parent: QObject | None = None,
+    ) -> None:
+        super().__init__(editor, parent)
+        self.container = VarContainer()
+
+        with ui.Col():
+            with ToolBar():
+                toolbar_button(
+                    icon="arrow-back.svg",
+                    tooltip=str(dtr("Vars", "Cancel")),
+                    callback=self.on_cancel,
+                )
+                toolbar_button(
+                    icon="check-mark.svg",
+                    tooltip=str(dtr("Vars", "Apply changes")),
+                    callback=self.on_apply,
+                )
+
+            with ui.GroupBox(title=str(dtr("Vars", "Manage groups"))) as root:
+                self.root = root
+                with (
+                    ui.Scroll(widgetResizable=True),
+                    ui.Container(),
+                    ui.Col(contentsMargins=(0, 0, 0, 0), spacing=0),
+                ):
+                    with ui.Col(contentsMargins=(0, 0, 0, 0), spacing=0) as col:
+                        self.editors_layout = col.layout()
+                    self.editors = []
+                    ui.Stretch(1)
+
+    def load_groups(self) -> None:
+        layout = self.editors_layout
+        for ed in self.editors:
+            ed.deleteLater()
+        editors = self.editors = []
+        root = self.root
+        for i in range(layout.count()):
+            layout.takeAt(i)
+
+        for g in self.container.groups():
+            row = GroupItem(g, root)
+            row.order_changed.connect(self.on_reordered)
+            editors.append(row)
+            layout.addWidget(row)
+
+    def on_cancel(self) -> None:
+        self.event_bus.goto_home.emit()
+
+    def on_apply(self) -> None:
+        names = []
+        hidden = []
+        for ge in self.editors:
+            ge.apply_changes()
+            names.append(ge.group.name)
+            if ge.group.hidden:
+                hidden.append(ge.group.name)
+        self.container.reorder(names)
+        self.container.set_hidden(hidden)
+        self.event_bus.reload_vars.emit()
+
+    def on_reordered(self) -> None:
+        self.editors.sort()
+        for index, ge in enumerate(self.editors):
+            ge.group.sort_key = index
+
+        layout = self.editors_layout
+        for ge in self.editors:
+            layout.removeWidget(ge)
+            layout.addWidget(ge)
+
+
 class VarRenamePage(UIPage):
     """View: Rename variable form page."""
 
@@ -1257,6 +1454,7 @@ class VariablesEditor(QObject):
     references_page: VarReferencesPage
     delete_page: VarDeletePage
     home_page: HomePage
+    groups_page: GroupManagementPage
 
     q_settings = QSettings("FreeCAD", "mnesarco-Vars")
 
@@ -1286,6 +1484,7 @@ class VariablesEditor(QObject):
                 self.rename_page = VarRenamePage(self, dialog)
                 self.references_page = VarReferencesPage(self, dialog)
                 self.delete_page = VarDeletePage(self, dialog)
+                self.groups_page = GroupManagementPage(self, dialog)
 
         if x or y:
             dialog.setGeometry(x, y, w, h)
@@ -1350,22 +1549,30 @@ class VariablesEditor(QObject):
         self.q_settings.setValue("w", geom.width())
         self.q_settings.setValue("h", geom.height())
 
-    def get_groups(self) -> dict[str, list[Variable]]:
+    def get_groups(self) -> list[(str, list[Variable])]:
         supported_types = get_supported_property_types()
-        variables = [v for v in get_vars(self.doc) if v.var_type in supported_types]
-        return groupby(sorted(variables), lambda v: v.group)
+        visible_groups = [g for g in VarContainer(self.doc).groups() if not g.hidden]
+        return [
+            (g.name, [v for v in g.variables() if v.var_type in supported_types])
+            for g in visible_groups
+        ]
 
     def init_events(self) -> None:
         bus = self.event_bus
         bus.goto_edit_var.connect(self.cmd_edit_var)
         bus.goto_rename_var.connect(self.cmd_rename_var)
         bus.goto_home.connect(self.on_home)
-        bus.var_created.connect(self.on_var_created)
         bus.goto_var_references.connect(self.cmd_var_references)
         bus.goto_delete_var.connect(self.cmd_delete_var)
+        bus.goto_groups.connect(self.cmd_manage_groups)
+        bus.var_created.connect(self.on_var_created)
         bus.var_edited.connect(self.on_var_edited)
         bus.var_editor_removed.connect(self.do_delete_var)
         bus.filter_changed.connect(self.cmd_filter)
+
+    def cmd_manage_groups(self) -> None:
+        self.groups_page.load_groups()
+        self.switch_to_page(self.groups_page)
 
     def do_delete_var(self, var: Variable) -> None:
         var.delete()

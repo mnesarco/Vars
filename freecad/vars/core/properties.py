@@ -48,7 +48,7 @@ def get_all_property_types() -> Generator[tuple[str, PropertyTypeInfo], None, No
     :side effects: None.
     """
     for prop in vars(fpo).values():
-        if isinstance(prop, fpo._prop_constructor):
+        if isinstance(prop, fpo._prop_constructor):  # noqa: SLF001
             yield (
                 prop.prop_type,
                 PropertyTypeInfo(
