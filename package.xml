@@ -1,9 +1,9 @@
 <package format="1">
     <name>Vars</name>
     <description>FreeCAD Vars</description>
-    <version>0.0.1.dev9</version>
+    <version>0.0.2.beta1</version>
     <license file="LICENSE">LGPL-3.0-or-later</license>
-    <date>2025-06-10</date>
+    <date>2025-06-11</date>
     <pythonmin>3.10</pythonmin>
     <icon>freecad/vars/resources/icons/vars.svg</icon>
     <freecadmin>1.0</freecadmin>

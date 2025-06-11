@@ -747,7 +747,7 @@ wheels = [
 
 [[package]]
 name = "vars"
-version = "0.0.1.dev9"
+version = "0.0.2b1"
 source = { virtual = "." }
 
 [package.dev-dependencies]

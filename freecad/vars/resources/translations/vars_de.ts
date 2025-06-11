@@ -137,7 +137,7 @@
     </message>
     <message>
         <location filename="../../commands/editor.py" line="11"/>
-        <location filename="../../ui/editors.py" line="1273"/>
+        <location filename="../../ui/editors.py" line="1471"/>
         <source>Variables</source>
         <translation type="unfinished"></translation>
     </message>
@@ -147,288 +147,309 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="308"/>
+        <location filename="../../ui/editors.py" line="320"/>
         <source>Invalid value</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="358"/>
-        <location filename="../../ui/editors.py" line="1107"/>
+        <location filename="../../ui/editors.py" line="370"/>
+        <location filename="../../ui/editors.py" line="1304"/>
         <source>Rename</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="365"/>
+        <location filename="../../ui/editors.py" line="377"/>
         <source>Show references</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="372"/>
+        <location filename="../../ui/editors.py" line="384"/>
         <source>Change definition</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="379"/>
-        <location filename="../../ui/editors.py" line="1214"/>
+        <location filename="../../ui/editors.py" line="391"/>
+        <location filename="../../ui/editors.py" line="1411"/>
         <source>Delete</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="387"/>
+        <location filename="../../ui/editors.py" line="399"/>
         <source>Unlock</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="388"/>
+        <location filename="../../ui/editors.py" line="400"/>
         <source>Lock</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="396"/>
+        <location filename="../../ui/editors.py" line="408"/>
         <source>Restore visibility</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="397"/>
+        <location filename="../../ui/editors.py" line="409"/>
         <source>Hide</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="406"/>
+        <location filename="../../ui/editors.py" line="418"/>
+        <location filename="../../ui/editors.py" line="1139"/>
         <source>Move to top</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="413"/>
+        <location filename="../../ui/editors.py" line="425"/>
+        <location filename="../../ui/editors.py" line="1146"/>
         <source>Move up</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="420"/>
+        <location filename="../../ui/editors.py" line="432"/>
+        <location filename="../../ui/editors.py" line="1153"/>
         <source>Move down</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="427"/>
+        <location filename="../../ui/editors.py" line="439"/>
+        <location filename="../../ui/editors.py" line="1160"/>
         <source>Move to bottom</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="736"/>
+        <location filename="../../ui/editors.py" line="749"/>
         <source>Search...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="745"/>
-        <location filename="../../ui/editors.py" line="967"/>
+        <location filename="../../ui/editors.py" line="758"/>
+        <location filename="../../ui/editors.py" line="985"/>
         <source>Create new variable</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="750"/>
-        <location filename="../../ui/editors.py" line="1417"/>
+        <location filename="../../ui/editors.py" line="763"/>
+        <location filename="../../ui/editors.py" line="1624"/>
         <source>Import variables</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="755"/>
-        <location filename="../../ui/editors.py" line="1426"/>
+        <location filename="../../ui/editors.py" line="768"/>
+        <location filename="../../ui/editors.py" line="1633"/>
         <source>Export variables</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="760"/>
+        <location filename="../../ui/editors.py" line="773"/>
         <source>Generate report table</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="769"/>
-        <source>Pause automatic recomputation&lt;hr /&gt;Currently Automatic</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../ui/editors.py" line="771"/>
-        <source>Enable automatic recomputation&lt;hr /&gt;Currently Paused</source>
+        <location filename="../../ui/editors.py" line="778"/>
+        <location filename="../../ui/editors.py" line="1226"/>
+        <source>Manage groups</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../ui/editors.py" line="787"/>
+        <source>Pause automatic recomputation&lt;hr /&gt;Currently Automatic</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../ui/editors.py" line="789"/>
+        <source>Enable automatic recomputation&lt;hr /&gt;Currently Paused</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../ui/editors.py" line="805"/>
         <source>Hidden vars are visible, click to hide.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="788"/>
+        <location filename="../../ui/editors.py" line="806"/>
         <source>Show hidden vars</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="843"/>
-        <location filename="../../ui/editors.py" line="890"/>
-        <location filename="../../ui/editors.py" line="1102"/>
-        <location filename="../../ui/editors.py" line="1183"/>
+        <location filename="../../ui/editors.py" line="861"/>
+        <location filename="../../ui/editors.py" line="908"/>
+        <location filename="../../ui/editors.py" line="1217"/>
+        <location filename="../../ui/editors.py" line="1299"/>
+        <location filename="../../ui/editors.py" line="1380"/>
         <source>Cancel</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="847"/>
+        <location filename="../../ui/editors.py" line="865"/>
         <source>References</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="848"/>
+        <location filename="../../ui/editors.py" line="866"/>
         <source>Variable Name:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="855"/>
+        <location filename="../../ui/editors.py" line="873"/>
         <source>Known References:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="895"/>
+        <location filename="../../ui/editors.py" line="913"/>
         <source>Save</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="901"/>
-        <location filename="../../ui/editors.py" line="980"/>
+        <location filename="../../ui/editors.py" line="919"/>
+        <location filename="../../ui/editors.py" line="998"/>
         <source>Edit variable</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="910"/>
-        <location filename="../../ui/editors.py" line="1191"/>
+        <location filename="../../ui/editors.py" line="928"/>
+        <location filename="../../ui/editors.py" line="1388"/>
         <source>Name:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="913"/>
+        <location filename="../../ui/editors.py" line="931"/>
         <source>Type:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="920"/>
+        <location filename="../../ui/editors.py" line="938"/>
         <source>Group:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="932"/>
+        <location filename="../../ui/editors.py" line="950"/>
         <source>Description:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="942"/>
+        <location filename="../../ui/editors.py" line="960"/>
         <source>Options:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="959"/>
+        <location filename="../../ui/editors.py" line="977"/>
         <source>Known References (May Break)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="1003"/>
+        <location filename="../../ui/editors.py" line="1021"/>
         <source>Invalid property type selected.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="1050"/>
+        <location filename="../../ui/editors.py" line="1068"/>
         <source>Object Label</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="1051"/>
+        <location filename="../../ui/editors.py" line="1069"/>
         <source>Property</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="1052"/>
+        <location filename="../../ui/editors.py" line="1070"/>
         <source>Expression</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="1053"/>
+        <location filename="../../ui/editors.py" line="1071"/>
         <source>Internal Name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="1111"/>
+        <location filename="../../ui/editors.py" line="1133"/>
+        <source>Toggle visibility</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../ui/editors.py" line="1222"/>
+        <source>Apply changes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../ui/editors.py" line="1308"/>
         <source>Rename variable</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="1115"/>
+        <location filename="../../ui/editors.py" line="1312"/>
         <source>Old name:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="1120"/>
+        <location filename="../../ui/editors.py" line="1317"/>
         <source>New name:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="1138"/>
+        <location filename="../../ui/editors.py" line="1335"/>
         <source>Known References (Auto update)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="1187"/>
+        <location filename="../../ui/editors.py" line="1384"/>
         <source>Delete variable</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="1199"/>
+        <location filename="../../ui/editors.py" line="1396"/>
         <source>Deleting variables will break all references to it.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="1205"/>
+        <location filename="../../ui/editors.py" line="1402"/>
         <source>Danger zone</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="1208"/>
+        <location filename="../../ui/editors.py" line="1405"/>
         <source>Confirm deletion:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="1223"/>
+        <location filename="../../ui/editors.py" line="1420"/>
         <source>Known References (Will break)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="1238"/>
+        <location filename="../../ui/editors.py" line="1435"/>
         <source>Delete {name}</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="1418"/>
-        <location filename="../../ui/editors.py" line="1427"/>
+        <location filename="../../ui/editors.py" line="1625"/>
+        <location filename="../../ui/editors.py" line="1634"/>
         <source>Variables files (*.fcvars)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="1436"/>
+        <location filename="../../ui/editors.py" line="1643"/>
         <source>Export variables report html</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="1437"/>
+        <location filename="../../ui/editors.py" line="1644"/>
         <source>Html (*.html)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="1477"/>
+        <location filename="../../ui/editors.py" line="1684"/>
         <source>Variable &apos;{name}&apos; already exists.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="1494"/>
+        <location filename="../../ui/editors.py" line="1701"/>
         <source>Failed to set variable type.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="1516"/>
+        <location filename="../../ui/editors.py" line="1723"/>
         <source>New variable name already exists.</source>
         <translation type="unfinished"></translation>
     </message>
