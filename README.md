@@ -16,6 +16,13 @@ variables are first class DocumentObjects.
 5. Import/Export variables support.
 6. Show references inside the document.
 
+### Added in 0.0.2
+
+7. Variable and group re-ordering
+8. Variable and group visibility
+9. Variable lock/unlock
+10. Group renaming
+
 ## Status
 
 This Add-on is in alpha state.
