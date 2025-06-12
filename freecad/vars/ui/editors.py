@@ -569,6 +569,7 @@ class VarGroupSection(QObject):
             title=name,
             contentsMargins=(2, 2, 2, 2),
             objectName=f"VarsGroupBox{hash(name)}",
+            styleSheet=f"QGroupBox[objectName='VarsGroupBox{hash(name)}'] {{margin-bottom: 20;}}",
             add=add,
         ) as box:
             self.container = box
@@ -704,7 +705,11 @@ class HomePage(UIPage):
             with (
                 ui.Scroll(widgetResizable=True) as scroll,
                 ui.Container(),
-                ui.Col(contentsMargins=(0, 0, 0, 0), spacing=0),
+                ui.Col(
+                    contentsMargins=(0, 0, 0, 0),
+                    spacing=0,
+                    alignment=ui.Qt.AlignmentFlag.AlignTop,
+                ),
             ):
                 bus = self.event_bus
                 self.create_sections(groups)
@@ -721,7 +726,8 @@ class HomePage(UIPage):
             var.document.recompute()
 
     def create_sections(self, groups: list[tuple[str, list[Variable]]], add: bool = True) -> None:
-        with ui.Col(spacing=10, add=add) as col:
+        with ui.Col(spacing=0, add=add) as col:
+            col.layout().setAlignment(ui.Qt.AlignmentFlag.AlignTop)
             col.setObjectName("_VarsEditorHomeContent_")
             bus = self.event_bus
             self.editor.sections_layout = col.layout()
@@ -1178,7 +1184,6 @@ class GroupItem(ui.QFrame):
                 resources.icon("hidden_ind.svg" if group.hidden else "visible.svg"),
             ),
         )
-
 
     def reordered(self, delta: float) -> None:
         self.group.sort_key = self.group.sort_key + delta
