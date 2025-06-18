@@ -47,6 +47,7 @@ if TYPE_CHECKING:
         QMenu,
         QAbstractSpinBox,
         QApplication,
+        QSlider,
     )
     from PySide6.QtCore import QSettings, QObject, QEvent, QTimer
 
@@ -57,6 +58,7 @@ if not TYPE_CHECKING:
         QMenu,
         QAbstractSpinBox,
         QApplication,
+        QSlider,
     )
     from PySide.QtCore import QSettings, QObject, QEvent, QTimer
 
@@ -159,6 +161,7 @@ class VarEditor(QObject):
     lock_event_filter: LockEventFilter
     lock_action: ui.QAction
     scroll_event_filter: ScrollEventFilter
+    row_layout: ui.QHBoxLayout
 
     def __init__(
         self,
@@ -196,12 +199,13 @@ class VarEditor(QObject):
             box.varInstance = self
             tooltip = self.var_tooltip()
             with ui.Col(contentsMargins=(2, 0, 2, 0), spacing=0):
-                with ui.Row(contentsMargins=(0, 0, 0, 0), spacing=0):
+                with ui.Row(contentsMargins=(0, 0, 0, 0), spacing=0) as row:
+                    self.row_layout = row.layout()
                     self.label = ui.InputText(
                         var_display_label(variable.group, variable.name),
                         readOnly=True,
                         focusPolicy=ui.Qt.FocusPolicy.ClickFocus,
-                        stretch=45,
+                        stretch=_UI_CACHE.get("LabelColumnStretch", 45),
                         styleSheet="font-weight: bold;",
                         toolTip=tooltip,
                         cursorPosition=0,
@@ -211,6 +215,12 @@ class VarEditor(QObject):
 
             self.create_description(box)
             self.install_focus_style_listener()
+
+        self.event_bus.column_width_change.connect(self.on_column_width_changed)
+
+    def on_column_width_changed(self, value: int) -> None:
+        self.row_layout.setStretchFactor(self.label, value)
+        self.row_layout.setStretchFactor(self.editor, 100 - value)
 
     def install_focus_style_listener(self) -> None:
         ui.QApplication.instance().focusChanged.connect(self.on_focus_change)
@@ -254,14 +264,14 @@ class VarEditor(QObject):
                 prop_name="Value",
                 accessor_adapter=accessor_adapter,
                 objectName=f"VarEditor_{variable.internal_name}",
-                stretch=55,
+                stretch=100 - _UI_CACHE.get("LabelColumnStretch", 45),
             )
         else:
             self.editor = ui.InputQuantity(
                 obj=variable.varset,
                 property="Value",
                 auto_apply=True,
-                stretch=55,
+                stretch=100 - _UI_CACHE.get("LabelColumnStretch", 45),
                 widget_type=widget_type,
                 name=f"VarEditor_{variable.internal_name}",
                 toolTip=tooltip,
@@ -540,6 +550,8 @@ class EventBus(QObject):
 
     reload_vars = ui.Signal()
 
+    column_width_change = ui.Signal(int)
+
     def __init__(self, *args) -> None:  # noqa: D107
         super().__init__(*args)
 
@@ -689,6 +701,7 @@ class HomePage(UIPage):
     recompute_btn: ui.QAbstractButton
     search: ui.InputTextWidget
     show_hidden: bool
+    column_slider: QSlider
 
     def __init__(
         self,
@@ -700,8 +713,9 @@ class HomePage(UIPage):
         self.auto_recompute = False
         self.show_hidden = preferences.Hidden.show_hidden_vars()
         with ui.Col():
-            self.toolbar()
-            editor.search = self.search_box()
+            self.create_toolbar()
+            editor.search = self.create_search_box()
+            self.create_column_slider()
             with (
                 ui.Scroll(widgetResizable=True) as scroll,
                 ui.Container(),
@@ -720,6 +734,30 @@ class HomePage(UIPage):
 
         self.event_bus.variable_changed.connect(self.recompute)
         self.event_bus.reload_vars.connect(self.reload_content)
+
+    def create_column_slider(self) -> None:
+        with ui.Row(contentsMargins=(10, 0, 40, 0)):
+            slider = QSlider()
+            slider.setMinimum(0)
+            slider.setMaximum(100)
+            slider.setValue(_UI_CACHE.get("LabelColumnStretch", 45))
+            slider.setOrientation(ui.Qt.Orientation.Horizontal)
+            slider.setTickPosition(QSlider.TickPosition.NoTicks)
+            slider.setFocusPolicy(ui.Qt.FocusPolicy.NoFocus)
+            ui.place_widget(slider)
+            slider.valueChanged.connect(self.on_column_width_change)
+            self.column_slider = slider
+
+    def on_column_width_change(self, value: int) -> None:
+        MIN, MAX = 20, 70
+        if value < MIN:
+            value = MIN
+            self.column_slider.setValue(value)
+        elif value > MAX:
+            value = MAX
+            self.column_slider.setValue(value)
+        _UI_CACHE["LabelColumnStretch"] = value
+        self.event_bus.column_width_change.emit(value)
 
     def recompute(self, var: Variable) -> None:
         if self.auto_recompute:
@@ -750,13 +788,13 @@ class HomePage(UIPage):
 
         ui.QTimer.singleShot(100, task)
 
-    def search_box(self) -> ui.QWidget:
+    def create_search_box(self) -> ui.QWidget:
         with ui.Row(contentsMargins=(0, 0, 0, 0)):
             self.search = ui.InputText(placeholderText=str(dtr("Vars", "Search...")), stretch=1)
             self.search.textChanged.connect(self.editor.cmd_filter)
             return self.search
 
-    def toolbar(self) -> ui.QWidget:
+    def create_toolbar(self) -> ui.QWidget:
         editor = self.editor
         with ToolBar(stretch=False) as row:
             toolbar_button(
@@ -1807,3 +1845,7 @@ class LockEventFilter(QObject):
 
 
 _DISPLAY_LABEL_SEP = re.compile(r"_|(?=[A-Z])")
+
+_UI_CACHE = {
+    "LabelColumnStretch": 45,
+}
