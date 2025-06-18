@@ -45,3 +45,12 @@ TODO
 # Licenses
 
 FreeCAD Addon is licensed under LGPL to avoid possible conflicts with FreeCAD license which is LGPL too.
+
+
+# Note about AI
+
+I do not accept AI-generated code contributions. This is a personal preference — nothing against the submitter.
+
+You're very welcome to share ideas, bug reports, and thoughtfully crafted human-written code. I appreciate the time and effort behind such contributions, and I'm happy to review them.
+
+Thanks for understanding.
