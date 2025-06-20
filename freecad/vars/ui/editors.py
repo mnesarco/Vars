@@ -452,7 +452,10 @@ class VarEditor(QObject):
         )
 
         btn: ui.QToolButton = self.sender()
-        menu.exec(btn.mapToGlobal(btn.rect().bottomLeft()))
+        try:
+            menu.exec(btn.mapToGlobal(btn.rect().bottomLeft()))
+        except AttributeError:
+            menu.exec_(btn.mapToGlobal(btn.rect().bottomLeft()))
 
     def cmd_sort_top(self) -> None:
         self.variable.reorder(float("-inf"))
