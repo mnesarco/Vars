@@ -1774,6 +1774,8 @@ class VariablesEditor(QObject):
 @cache
 def var_display_label(group: str, name: str) -> str:
     """Get the display label for a variable."""
+    if preferences.raw_name_labels():
+        return name
     try:
         parts = [p for p in _DISPLAY_LABEL_SEP.split(name) if p]
         if len(parts) > 1 and group.lower() == parts[0].lower():

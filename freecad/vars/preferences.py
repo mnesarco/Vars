@@ -11,6 +11,7 @@ from .vendor.fcapi.preferences import (
 from .vendor.fcapi.lang import dtr
 from freecad.vars.core.properties import get_supported_property_types
 
+
 @auto_gui(
     default_ui_group="Vars",
     default_ui_page=dtr("Vars", "General"),
@@ -60,6 +61,18 @@ class VarsPreferences(Preferences):
         options=get_supported_property_types(),
     )
 
+    raw_name_labels = Preference(
+        group,
+        name="raw_name_labels",
+        default=False,
+        label=dtr("Vars", "Use raw variable names as labels"),
+        description=dtr(
+            "Vars",
+            "Show variable names as labels or reformat for legibility. (Requires restart)",
+        ),
+        ui_section=dtr("Vars", "General"),
+    )
+
     class Hidden:
         """
         Preferences for internal use. Nor editable by users.
@@ -70,4 +83,3 @@ class VarsPreferences(Preferences):
             name="show_hidden_vars",
             default=False,
         )
-
