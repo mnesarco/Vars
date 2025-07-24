@@ -241,13 +241,13 @@
     </message>
     <message>
         <location filename="../../ui/editors.py" line="810"/>
-        <location filename="../../ui/editors.py" line="1670"/>
+        <location filename="../../ui/editors.py" line="1671"/>
         <source>Import variables</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../ui/editors.py" line="815"/>
-        <location filename="../../ui/editors.py" line="1679"/>
+        <location filename="../../ui/editors.py" line="1680"/>
         <source>Export variables</source>
         <translation type="unfinished"></translation>
     </message>
@@ -434,33 +434,33 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="1671"/>
-        <location filename="../../ui/editors.py" line="1680"/>
+        <location filename="../../ui/editors.py" line="1672"/>
+        <location filename="../../ui/editors.py" line="1681"/>
         <source>Variables files (*.fcvars)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="1689"/>
+        <location filename="../../ui/editors.py" line="1690"/>
         <source>Export variables report html</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="1690"/>
+        <location filename="../../ui/editors.py" line="1691"/>
         <source>Html (*.html)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="1730"/>
+        <location filename="../../ui/editors.py" line="1731"/>
         <source>Variable &apos;{name}&apos; already exists.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="1747"/>
+        <location filename="../../ui/editors.py" line="1748"/>
         <source>Failed to set variable type.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../ui/editors.py" line="1769"/>
+        <location filename="../../ui/editors.py" line="1770"/>
         <source>New variable name already exists.</source>
         <translation type="unfinished"></translation>
     </message>

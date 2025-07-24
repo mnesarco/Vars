@@ -1521,6 +1521,7 @@ class VariablesEditor(QObject):
             size=(w, h),
         ) as dialog:
             dialog.setAttribute(ui.Qt.WidgetAttribute.WA_DeleteOnClose, False)
+            dialog.addAction("Close", "Ctrl+Shift+K", dialog.close)
             self.dialog = dialog
             self.event_bus = EventBus(self)
             with ui.Stack() as pages:
