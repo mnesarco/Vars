@@ -1521,7 +1521,7 @@ class VariablesEditor(QObject):
             size=(w, h),
         ) as dialog:
             dialog.setAttribute(ui.Qt.WidgetAttribute.WA_DeleteOnClose, False)
-            dialog.addAction("Close", "Ctrl+Shift+K", dialog.close)
+            # dialog.addAction("Close", "Ctrl+Shift+K", dialog.close) # apparently not supported in Qt5 I guess
             self.dialog = dialog
             self.event_bus = EventBus(self)
             with ui.Stack() as pages:

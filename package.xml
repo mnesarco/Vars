@@ -1,7 +1,7 @@
 <package format="1">
     <name>Vars</name>
     <description>FreeCAD Vars</description>
-    <version>0.0.2.beta3</version>
+    <version>0.0.2.beta4</version>
     <license file="LICENSE">LGPL-3.0-or-later</license>
     <date>2025-07-24</date>
     <pythonmin>3.10</pythonmin>

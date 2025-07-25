@@ -1,6 +1,6 @@
 [project]
 name = "Vars"
-version = "0.0.2.beta3"
+version = "0.0.2.beta4"
 description = "FreeCAD Vars"
 readme = "README.md"
 requires-python = ">=3.10"
