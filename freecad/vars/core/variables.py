@@ -97,7 +97,7 @@ def create_var(
         "Description",
         "",
         "Variable Description",
-        PropertyMode.Output | PropertyMode.NoRecompute,
+        PropertyMode.Output | PropertyMode.NoRecompute | PropertyMode.Hidden,
     )
     varset.Description = description or ""
 
@@ -106,7 +106,7 @@ def create_var(
         "VarGroup",
         "",
         "Variable Group",
-        PropertyMode.Output | PropertyMode.NoRecompute,
+        PropertyMode.Output | PropertyMode.NoRecompute | PropertyMode.Hidden,
     )
     varset.VarGroup = (group or "Default").title()
 
@@ -115,7 +115,7 @@ def create_var(
         "SortKey",
         "",
         "Variable Sort Key",
-        PropertyMode.Output | PropertyMode.NoRecompute,
+        PropertyMode.Output | PropertyMode.NoRecompute | PropertyMode.Hidden,
     )
     varset.SortKey = 0
 
@@ -124,7 +124,7 @@ def create_var(
         "Hidden",
         "",
         "Hide variable from UI",
-        PropertyMode.Output | PropertyMode.NoRecompute,
+        PropertyMode.Output | PropertyMode.NoRecompute | PropertyMode.Hidden,
     )
     varset.Hidden = False
 
@@ -792,7 +792,7 @@ class Variable:
                 "Hidden",
                 "",
                 "Hide variable from UI",
-                PropertyMode.Output | PropertyMode.NoRecompute,
+                PropertyMode.Output | PropertyMode.NoRecompute | PropertyMode.Hidden,
             )
         varset.Hidden = value
 
@@ -811,7 +811,7 @@ class Variable:
                 "SortKey",
                 "",
                 "Variable Sort Key",
-                PropertyMode.Output | PropertyMode.NoRecompute,
+                PropertyMode.Output | PropertyMode.NoRecompute | PropertyMode.Hidden,
             )
         varset.SortKey = key
 
@@ -848,7 +848,7 @@ class Variable:
                 "Hidden",
                 "",
                 "Hide variable from UI",
-                PropertyMode.Output | PropertyMode.NoRecompute,
+                PropertyMode.Output | PropertyMode.NoRecompute | PropertyMode.Hidden,
             )
         varset.Hidden = value
 
@@ -896,9 +896,21 @@ class VarContainer:
     def __init__(self, doc: Document | None = None) -> None:
         self.obj = get_vars_group(doc)
         if "Sort" not in self.obj.PropertiesList:
-            self.obj.addProperty("App::PropertyString", "Sort", "", "Group sorting", 2)
+            self.obj.addProperty(
+                "App::PropertyString",
+                "Sort",
+                "",
+                "Group sorting",
+                PropertyMode.Hidden | PropertyMode.NoRecompute | PropertyMode.Output,
+            )
         if "Hidden" not in self.obj.PropertiesList:
-            self.obj.addProperty("App::PropertyString", "Hidden", "", "Group visibility", 2)
+            self.obj.addProperty(
+                "App::PropertyString",
+                "Hidden",
+                "",
+                "Group visibility",
+                PropertyMode.Hidden | PropertyMode.NoRecompute | PropertyMode.Output,
+            )
 
     def groups(self) -> list[VarGroup]:
         names = set(get_groups(self.obj.Document))
