@@ -5,13 +5,13 @@ from __future__ import annotations
 
 import datetime
 import re
-import xml.etree.ElementTree as ET
 from dataclasses import InitVar, asdict, dataclass
 from functools import total_ordering
 from pathlib import Path
 
 
 from . import xml
+from .xml import ET, safe_parse
 from .project import PyProject
 from packaging.requirements import Requirement
 
@@ -156,7 +156,7 @@ def update_package(base: Path, pyproject: PyProject):
     file = base / "package.xml"
 
     if file.exists():
-        tree = ET.parse(file)
+        tree = safe_parse(file)
         root = tree.getroot()
     else:
         root = ET.Element("package", format="1")
