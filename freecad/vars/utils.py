@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from FreeCAD import Document # type: ignore
 
-_RAND = random.Random(time.time())  # noqa: S311 No cryptography
+_RAND = random.Random(time.time())  # nosec B311, noqa: S311 No cryptography
 
 def get_unique_name(doc: Document, prefix: str = "XVar_") -> str:
     """
