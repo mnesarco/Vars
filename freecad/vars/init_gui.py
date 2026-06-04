@@ -23,8 +23,9 @@ rules.install()
 def on_user_pref_changed(group: object, _type: type, name: str, _value: object) -> None:
     from freecad.vars.core import variables
     from itertools import chain
+    import FreeCAD as App
 
-    if name == config.VarsPreferences.hide_varsets.name:
+    if name == config.VarsPreferences.hide_varsets.name and App.activeDocument():
         show = not config.preferences.hide_varsets()
         if group := variables.get_vars_group():
             for obj in chain(group.Group, [group]):
