@@ -2,7 +2,7 @@
 <package format="1" xmlns="https://wiki.freecad.org/Package_Metadata">
     <name>Vars</name>
     <description>FreeCAD Vars</description>
-    <version>0.0.2.beta5</version>
+    <version>0.0.2.beta6</version>
     <license file="LICENSE">LGPL-3.0-or-later</license>
     <date>2025-09-11</date>
     <pythonmin>3.10</pythonmin>
