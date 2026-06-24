@@ -7,60 +7,61 @@ FreeCAD Vars: Editors UI.
 
 from __future__ import annotations
 
-from functools import cache
-import re
+import contextlib
 from contextlib import suppress
+from itertools import chain
+from textwrap import dedent, shorten
 from typing import TYPE_CHECKING
 
-from freecad.vars.vendor.fcapi.events import events
-from freecad.vars.vendor.fcapi.lang import dtr, translate
-from freecad.vars.vendor.fcapi import fcui as ui
+import FreeCAD as App  # type: ignore
+
 from freecad.vars.api import (
-    Variable,
-    get_groups,
-    create_var,
-    export_variables,
-    import_variables,
-    VarGroup,
     VarContainer,
+    VarGroup,
+    Variable,
+    create_var,
+    display_label,
+    export_variables,
+    get_groups,
+    import_variables,
 )
+from freecad.vars.config import preferences, resources
 from freecad.vars.core.properties import (
     PROPERTY_INFO,
     PropertyAccessorAdapter,
     get_supported_property_types,
 )
-from itertools import chain
-from freecad.vars.config import preferences, resources
-from .style import FlatIcon, interpolate_style_vars, TEXT_COLOR
-from textwrap import shorten, dedent
-import contextlib
-from . import widgets as uix
+from freecad.vars.vendor.fcapi import fcui as ui
+from freecad.vars.vendor.fcapi.events import events
+from freecad.vars.vendor.fcapi.lang import dtr, translate
 
-import FreeCAD as App  # type: ignore
+from . import widgets as uix
+from .style import TEXT_COLOR, FlatIcon, interpolate_style_vars
 
 if TYPE_CHECKING:
-    from collections.abc import Generator, Callable
+    from collections.abc import Callable, Generator
+
     from FreeCAD import Document, DocumentObject  # type: ignore
+    from PySide6.QtCore import QEvent, QObject, QSettings, QTimer
     from PySide6.QtWidgets import (
-        QGraphicsOpacityEffect,
-        QCompleter,
-        QMenu,
         QAbstractSpinBox,
         QApplication,
+        QCompleter,
+        QGraphicsOpacityEffect,
+        QMenu,
         QSlider,
     )
-    from PySide6.QtCore import QSettings, QObject, QEvent, QTimer
 
 if not TYPE_CHECKING:
+    from PySide.QtCore import QEvent, QObject, QSettings, QTimer
     from PySide.QtGui import (
-        QGraphicsOpacityEffect,
-        QCompleter,
-        QMenu,
         QAbstractSpinBox,
         QApplication,
+        QCompleter,
+        QGraphicsOpacityEffect,
+        QMenu,
         QSlider,
     )
-    from PySide.QtCore import QSettings, QObject, QEvent, QTimer
 
 style_vars = {
     "border_color": TEXT_COLOR,
@@ -202,7 +203,7 @@ class VarEditor(QObject):
                 with ui.Row(contentsMargins=(0, 0, 0, 0), spacing=0) as row:
                     self.row_layout = row.layout()
                     self.label = ui.InputText(
-                        var_display_label(variable.group, variable.name),
+                        variable.var_label,
                         readOnly=True,
                         focusPolicy=ui.Qt.FocusPolicy.ClickFocus,
                         stretch=_UI_CACHE.get("LabelColumnStretch", 45),
@@ -339,7 +340,7 @@ class VarEditor(QObject):
 
     def ui_update(self, var: Variable) -> None:
         if var == self.variable:
-            self.label.setText(var_display_label(var.group, var.name))
+            self.label.setText(var.var_label)
             self.label.setToolTip(self.var_tooltip())
             self.description.setText(var.description)
             self.update_visibility_ui()
@@ -581,7 +582,7 @@ class VarGroupSection(QObject):
         self.event_bus = event_bus
 
         with ui.GroupBox(
-            title=name,
+            title=display_label(name),
             contentsMargins=(2, 2, 2, 2),
             objectName=f"VarsGroupBox{hash(name)}",
             styleSheet=f"QGroupBox[objectName='VarsGroupBox{hash(name)}'] {{margin-bottom: 20;}}",
@@ -1234,7 +1235,7 @@ class GroupItem(ui.QFrame):
         return self.group < other.group
 
     def apply_changes(self) -> None:
-        new_name = self.rename_input.text().strip().title()
+        new_name = self.rename_input.text().strip()
         if new_name != self.group.name:
             self.group.rename(new_name)
             self.name_changed.emit()
@@ -1772,20 +1773,6 @@ class VariablesEditor(QObject):
             return str(e)
 
 
-@cache
-def var_display_label(group: str, name: str) -> str:
-    """Get the display label for a variable."""
-    if preferences.raw_name_labels():
-        return name
-    try:
-        parts = [p for p in _DISPLAY_LABEL_SEP.split(name) if p]
-        if len(parts) > 1 and group.lower() == parts[0].lower():
-            parts.pop(0)
-        return " ".join(p.capitalize() for p in parts)
-    except Exception:  # noqa: BLE001
-        return name
-
-
 class ScrollEventFilter(QObject):
     """
     Prevents accidental changes on scroll.
@@ -1849,8 +1836,6 @@ class LockEventFilter(QObject):
         for child in target.findChildren(ui.QWidget):
             child.removeEventFilter(self)
 
-
-_DISPLAY_LABEL_SEP = re.compile(r"_|(?=[A-Z])")
 
 _UI_CACHE = {
     "LabelColumnStretch": 45,

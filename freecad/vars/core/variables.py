@@ -7,24 +7,28 @@ FreeCAD Vars: Variables.
 
 from __future__ import annotations
 
-from pathlib import Path
-from typing import Any, TYPE_CHECKING, TypeAlias
+import contextlib
 import operator as op
-
-from freecad.vars.utils import get_unique_name
-from freecad.vars.vendor.fcapi.fpo import PropertyMode
-from freecad.vars.config import preferences
+import re
+from collections.abc import Callable
+from dataclasses import dataclass
+from functools import cache
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, TypeAlias
 
 import FreeCAD as App  # type: ignore
-from collections.abc import Callable
-import contextlib
-from dataclasses import dataclass
+
+from freecad.vars.config import preferences
+from freecad.vars.utils import get_unique_name
+from freecad.vars.vendor.fcapi.fpo import PropertyMode
 
 if TYPE_CHECKING:
     from FreeCAD import Document, DocumentObject  # type: ignore
 
 
 VarOptions: TypeAlias = list[str] | Callable[[], list[str]] | None
+
+_DISPLAY_LABEL_SEP = re.compile(r"_|(?=[A-Z])")
 
 
 def get_vars_group(doc: Document | None = None) -> DocumentObject:
@@ -108,7 +112,7 @@ def create_var(
         "Variable Group",
         PropertyMode.Output | PropertyMode.NoRecompute | PropertyMode.Hidden,
     )
-    varset.VarGroup = (group or "Default").title()
+    varset.VarGroup = group or "Default"
 
     varset.addProperty(
         "App::PropertyInteger",
@@ -451,7 +455,7 @@ def export_variables(path: str | Path, doc: Document | None = None) -> bool:
     :param doc: The document where to export the variables. Defaults to ActiveDocument.
     :return: True if the export was successful, False otherwise.
     """
-    from .files import save_variables_to_file, VarInfoData
+    from .files import VarInfoData, save_variables_to_file
 
     if not path:
         return False
@@ -538,6 +542,28 @@ def import_variables(path: str | Path, doc: Document | None = None) -> bool:
         doc_var._set_sort_key(var.sort_key)  # noqa: SLF001
 
     return True
+
+
+@cache
+def var_display_label(group: str, name: str) -> str:
+    """Get the display label for a variable."""
+    if preferences.raw_name_labels():
+        return name
+    if name.lower().startswith(group.lower()):
+        name = name[len(group) :]
+    return display_label(name)
+
+
+@cache
+def display_label(name: str) -> str:
+    """Get the display label for a group/variable."""
+    if preferences.raw_name_labels():
+        return name
+    try:
+        parts = [p for p in _DISPLAY_LABEL_SEP.split(name) if p]
+        return " ".join(p.capitalize() for p in parts)
+    except Exception:  # noqa: BLE001
+        return name
 
 
 class Variable:
@@ -722,7 +748,7 @@ class Variable:
 
     @group.setter
     def group(self, group: str) -> None:
-        self.varset.VarGroup = (group or "Default").title()
+        self.varset.VarGroup = group or "Default"
 
     @property
     def var_type(self) -> str:
@@ -797,6 +823,14 @@ class Variable:
         varset.Hidden = value
 
     @property
+    def var_label(self) -> str:
+        return var_display_label(self.group, self.name)
+
+    @property
+    def group_label(self) -> str:
+        return display_label(self.group)
+
+    @property
     def sort_key(self) -> tuple[str | int, ...]:
         try:
             return (self.group, self.varset.SortKey, self.name)
@@ -839,19 +873,6 @@ class Variable:
             return self.internal_name == other.internal_name
         return self.name == other.name and self.document == other.document
 
-    @hidden.setter
-    def hidden(self, value: bool) -> None:
-        varset = self.varset
-        if not hasattr(varset, "Hidden"):
-            varset.addProperty(
-                "App::PropertyBool",
-                "Hidden",
-                "",
-                "Hide variable from UI",
-                PropertyMode.Output | PropertyMode.NoRecompute | PropertyMode.Hidden,
-            )
-        varset.Hidden = value
-
     def change_var_type(
         self,
         new_type: str,
@@ -878,7 +899,7 @@ class VarGroup:
         return self.sort_key < other.sort_key
 
     def rename(self, new_name: str) -> None:
-        new_name = new_name.strip().title()
+        new_name = new_name.strip()
         for var in get_vars():
             if var.group == self.name:
                 var.group = new_name

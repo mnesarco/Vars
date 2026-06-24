@@ -1,6 +1,6 @@
 [project]
 name = "Vars"
-version = "0.0.2.beta6"
+version = "0.0.2.beta7"
 description = "FreeCAD Vars"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -26,7 +26,6 @@ readme = "https://github.com/mnesarco/Vars/blob/main/README.md"
 dev = [
     "freecad-stubs>=1.0.17",
     "PySide6",
-    "ipykernel",
     "toml",
     "typer",
     "packaging",

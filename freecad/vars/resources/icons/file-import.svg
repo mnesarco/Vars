@@ -6,7 +6,7 @@
    y="0px"
    viewBox="0 0 64.000001 63.999999"
    xml:space="preserve"
-   sodipodi:docname="download-icon.svg"
+   sodipodi:docname="upload-icon.svg"
    width="64"
    height="64"
    inkscape:version="1.4.2 (ebf0e940d0, 2025-05-08)"
@@ -38,6 +38,6 @@
      transform="matrix(0.48832099,0,0,0.48832099,2,4.9226011)"
      style="stroke-width:2.04783"><path
        class="st0"
-       d="M 13.09,35.65 H 43.67 V 23.2 h 34.49 v 12.45 h 31.47 L 61.39,82.58 Z m 48.35,62.23 47.51,-0.14 4.54,-21.51 9.38,0.31 V 110.9 H 0 V 76.55 l 9.39,-0.31 4.54,21.51 z M 43.67,0 H 78.16 V 4.62 H 43.67 Z m 0,9.32 h 34.49 v 9.44 H 43.67 Z"
+       d="M 13.09,46.93 H 43.67 V 59.38 H 78.16 V 46.93 h 31.47 L 61.39,0 Z m 48.35,50.95 47.51,-0.14 4.54,-21.51 9.38,0.31 v 34.35 L 0,110.9 V 76.54 l 9.39,-0.31 4.54,21.51 z M 43.67,82.57 H 78.16 V 77.95 H 43.67 Z m 0,-9.31 H 78.16 V 63.82 H 43.67 Z"
        id="path1"
        style="stroke-width:2.04783" /></g></svg>

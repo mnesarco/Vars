@@ -102,8 +102,8 @@ def report_vars(file_path: str | Path, doc: Document) -> None:
             last_group = var.group
             rows.append(GROUP_ROW.format(group=html.escape(var.group or "")))
         rows.append(ROW.format(
-            group=html.escape(var.group or ""),
-            name=var.name,
+            group=html.escape(f"{var.group} ({var.group_label})"),
+            name=html.escape(f"{var.name} ({var.var_label})"),
             type=var.var_type,
             description=html.escape(str(var.description or "")),
             options="\n".join(f"<li>{html.escape(str(option or ''))}</li>" for option in var.options),
